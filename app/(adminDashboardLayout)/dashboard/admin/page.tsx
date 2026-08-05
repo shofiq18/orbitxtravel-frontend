@@ -96,18 +96,16 @@ export default function AdminOnboardingPage() {
 
                 {/* Actions */}
                 <div className="flex space-x-2 shrink-0 items-center">
-                  {processedStatus[app.id] ? (
-                    processedStatus[app.id] === 'approved' ? (
-                      <span className="bg-green-50 border border-green-200 text-green-600 px-3 py-1.5 text-xs font-bold flex items-center space-x-1 rounded-none">
-                        <Check className="h-4 w-4" />
-                        <span>Approved Successfully</span>
-                      </span>
-                    ) : (
-                      <span className="bg-red-50 border border-red-200 text-red-600 px-3 py-1.5 text-xs font-bold flex items-center space-x-1 rounded-none">
-                        <X className="h-4 w-4" />
-                        <span>Rejected Successfully</span>
-                      </span>
-                    )
+                  {app.isVerified || processedStatus[app.id] === 'approved' ? (
+                    <span className="bg-green-50 border border-green-200 text-green-600 px-3 py-1.5 text-xs font-bold flex items-center space-x-1 rounded-none">
+                      <Check className="h-4 w-4" />
+                      <span>Approved</span>
+                    </span>
+                  ) : processedStatus[app.id] === 'rejected' ? (
+                    <span className="bg-red-50 border border-red-200 text-red-600 px-3 py-1.5 text-xs font-bold flex items-center space-x-1 rounded-none">
+                      <X className="h-4 w-4" />
+                      <span>Rejected</span>
+                    </span>
                   ) : processingHostId === app.id ? (
                     <div className="flex items-center space-x-2 text-xs font-semibold text-text-light py-2">
                       <Loader2 className="h-4 w-4 animate-spin text-theme-primary" />

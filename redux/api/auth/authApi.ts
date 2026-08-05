@@ -43,6 +43,13 @@ export const authApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
+    uploadFile: builder.mutation({
+      query: (body) => ({
+        url: "/users/upload",
+        method: "POST",
+        body,
+      }),
+    }),
     switchRole: builder.mutation({
       query: (body) => ({
         url: "/users/switch-role",
@@ -86,4 +93,5 @@ export const {
   useGetMeQuery,
   useGetProfileQuery,
   useUpdateProfileMutation,
+  useUploadFileMutation,
 } = authApi;

@@ -7,6 +7,7 @@ import {
   useGetHotelsQuery,
   useCreateHotelMutation,
 } from "@/redux/api/hotel/hotelApi";
+import { useUploadFileMutation } from "@/redux/api/auth/authApi";
 import { Home, ShieldCheck, Loader2, Plus } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
@@ -29,6 +30,7 @@ export default function HotelPropertyPage() {
   const activeHotel = myHotels[0];
 
   const [createHotel, { isLoading: isCreatingHotel }] = useCreateHotelMutation();
+  const [uploadFile] = useUploadFileMutation();
 
   // Create Hotel Form States
   const [hotelName, setHotelName] = useState("");
@@ -36,10 +38,68 @@ export default function HotelPropertyPage() {
   const [hotelDesc, setHotelDesc] = useState("");
   const [amenitiesText, setAmenitiesText] = useState("Wi-Fi, Swimming Pool, Ocean View");
 
+  const [coverPhoto, setCoverPhoto] = useState("");
+  const [galleryPhotos, setGalleryPhotos] = useState<string[]>([]);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [isUploadingGallery, setIsUploadingGallery] = useState(false);
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingCover(true);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const res = await uploadFile({ file: reader.result as string }).unwrap();
+        if (res?.success && res?.data) {
+          setCoverPhoto(res.data);
+          toast.success("Cover photo uploaded successfully!");
+        }
+      } catch (err: any) {
+        toast.error("Failed to upload cover photo.");
+      } finally {
+        setIsUploadingCover(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setIsUploadingGallery(true);
+    const uploadedUrls: string[] = [];
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+        const res = await uploadFile({ file: base64 }).unwrap();
+        if (res?.success && res?.data) {
+          uploadedUrls.push(res.data);
+        }
+      }
+      setGalleryPhotos(prev => [...prev, ...uploadedUrls]);
+      toast.success(`${uploadedUrls.length} gallery photos uploaded successfully!`);
+    } catch (err: any) {
+      toast.error("Failed to upload one or more gallery photos.");
+    } finally {
+      setIsUploadingGallery(false);
+    }
+  };
+
   const handleCreateHotel = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!hotelName || !hotelAddress) {
       toast.error("Please fill in required fields.");
+      return;
+    }
+
+    if (!coverPhoto) {
+      toast.error("Hotel Cover photo is required.");
       return;
     }
 
@@ -49,7 +109,7 @@ export default function HotelPropertyPage() {
         address: hotelAddress,
         description: hotelDesc,
         amenities: amenitiesText.split(",").map((a) => a.trim()),
-        photos: ["https://cloudinary.com/hotel_default.jpg"],
+        photos: [coverPhoto, ...galleryPhotos],
       }).unwrap();
       toast.success(response?.message || "Hotel property listed successfully!");
       refetchHotels();
@@ -143,6 +203,66 @@ export default function HotelPropertyPage() {
               />
             </div>
 
+            {/* Cover Photo */}
+            <div>
+              <label className="block text-xs font-bold text-text-secondary mb-1.5">Hotel Cover Photo *</label>
+              <div className="flex items-center gap-4">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCoverUpload}
+                  className="hidden"
+                  id="hotel-cover-upload"
+                />
+                <label
+                  htmlFor="hotel-cover-upload"
+                  className="px-4 py-2 border border-border-custom text-xs font-bold text-text-primary bg-bg-secondary hover:bg-bg-secondary/80 cursor-pointer transition rounded-none inline-block"
+                >
+                  {isUploadingCover ? "Uploading..." : "Select Cover Photo"}
+                </label>
+                {coverPhoto && (
+                  <img
+                    src={coverPhoto}
+                    alt="Cover preview"
+                    className="w-16 h-16 object-cover border border-border-custom animate-pulse"
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Gallery Photos */}
+            <div>
+              <label className="block text-xs font-bold text-text-secondary mb-1.5">Gallery Photos (Optional)</label>
+              <div className="space-y-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleGalleryUpload}
+                  className="hidden"
+                  id="hotel-gallery-upload"
+                />
+                <label
+                  htmlFor="hotel-gallery-upload"
+                  className="px-4 py-2 border border-border-custom text-xs font-bold text-text-primary bg-bg-secondary hover:bg-bg-secondary/80 cursor-pointer transition rounded-none inline-block"
+                >
+                  {isUploadingGallery ? "Uploading..." : "Select Gallery Photos"}
+                </label>
+                {galleryPhotos.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {galleryPhotos.map((url, i) => (
+                      <img
+                        key={i}
+                        src={url}
+                        alt="Gallery preview"
+                        className="w-12 h-12 object-cover border border-border-custom"
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={isCreatingHotel}
@@ -187,6 +307,24 @@ export default function HotelPropertyPage() {
               ))}
             </div>
           </div>
+
+          {/* Photos Display */}
+          {activeHotel.photos && activeHotel.photos.length > 0 && (
+            <div className="space-y-3">
+              <span className="block font-bold text-text-primary text-[10px]">Property Cover & Gallery</span>
+              <div className="flex flex-wrap gap-3">
+                {activeHotel.photos.map((photo: string, idx: number) => (
+                  <div key={idx} className="relative w-24 h-24 border border-border-custom bg-bg-secondary overflow-hidden">
+                    <img
+                      src={photo}
+                      alt={`Property Photo ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

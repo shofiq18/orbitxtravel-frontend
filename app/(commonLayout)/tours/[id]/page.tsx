@@ -71,6 +71,18 @@ export default function TourDetailsPage() {
         <span>Back to Search</span>
       </Link>
 
+      {/* Cover Image banner */}
+      {((pkg.inclusions as any)?.coverImage) && (
+        <div className="w-full h-80 md:h-[450px] bg-bg-secondary border border-border-custom overflow-hidden relative rounded-none">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={(pkg.inclusions as any).coverImage}
+            alt={pkg.title}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         
         {/* Left Columns: Main Content */}
@@ -151,6 +163,25 @@ export default function TourDetailsPage() {
                   <div key={idx} className="flex items-start space-x-3 p-3 bg-bg-secondary border border-border-custom rounded-none">
                     <Check className="h-4.5 w-4.5 text-theme-secondary shrink-0 mt-0.5" />
                     <span className="text-xs text-text-secondary font-medium leading-normal">{activity}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tour Gallery */}
+          {((pkg.inclusions as any)?.photos) && ((pkg.inclusions as any).photos.length > 0) && (
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold text-text-primary tracking-wide">Tour Gallery</h3>
+              <div className="flex flex-wrap gap-4">
+                {(pkg.inclusions as any).photos.map((photoUrl: string, idx: number) => (
+                  <div key={idx} className="relative w-36 h-28 border border-border-custom bg-bg-secondary overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photoUrl}
+                      alt={`Tour Gallery ${idx + 1}`}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
                   </div>
                 ))}
               </div>

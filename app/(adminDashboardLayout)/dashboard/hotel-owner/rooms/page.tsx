@@ -7,6 +7,7 @@ import {
   useGetHotelsQuery,
   useCreateRoomMutation,
 } from "@/redux/api/hotel/hotelApi";
+import { useUploadFileMutation } from "@/redux/api/auth/authApi";
 import { Bed, ShieldCheck, Loader2, Plus } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
@@ -29,6 +30,7 @@ export default function HotelRoomsPage() {
   const activeHotel = myHotels[0];
 
   const [createRoom, { isLoading: isCreatingRoom }] = useCreateRoomMutation();
+  const [uploadFile] = useUploadFileMutation();
 
   // Create Room Form States
   const [roomType, setRoomType] = useState("");
@@ -37,11 +39,69 @@ export default function HotelRoomsPage() {
   const [inventory, setInventory] = useState("5");
   const [roomAmenities, setRoomAmenities] = useState("King Bed, AC, Mini Fridge");
 
+  const [coverPhoto, setCoverPhoto] = useState("");
+  const [galleryPhotos, setGalleryPhotos] = useState<string[]>([]);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [isUploadingGallery, setIsUploadingGallery] = useState(false);
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingCover(true);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const res = await uploadFile({ file: reader.result as string }).unwrap();
+        if (res?.success && res?.data) {
+          setCoverPhoto(res.data);
+          toast.success("Cover photo uploaded successfully!");
+        }
+      } catch (err: any) {
+        toast.error("Failed to upload cover photo.");
+      } finally {
+        setIsUploadingCover(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setIsUploadingGallery(true);
+    const uploadedUrls: string[] = [];
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+        const res = await uploadFile({ file: base64 }).unwrap();
+        if (res?.success && res?.data) {
+          uploadedUrls.push(res.data);
+        }
+      }
+      setGalleryPhotos(prev => [...prev, ...uploadedUrls]);
+      toast.success(`${uploadedUrls.length} gallery photos uploaded successfully!`);
+    } catch (err: any) {
+      toast.error("Failed to upload one or more gallery photos.");
+    } finally {
+      setIsUploadingGallery(false);
+    }
+  };
+
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeHotel) return;
     if (!roomType || !roomB2C || !roomB2B) {
       toast.error("Please fill in all room pricing metrics.");
+      return;
+    }
+
+    if (!coverPhoto) {
+      toast.error("Room Cover photo is required.");
       return;
     }
 
@@ -54,7 +114,7 @@ export default function HotelRoomsPage() {
           inventory: Number(inventory),
           b2cPrice: Number(roomB2C),
           b2bPrice: Number(roomB2B),
-          photos: ["https://cloudinary.com/room_default.jpg"],
+          photos: [coverPhoto, ...galleryPhotos],
         },
       }).unwrap();
       
@@ -62,6 +122,8 @@ export default function HotelRoomsPage() {
       setRoomType("");
       setRoomB2C("");
       setRoomB2B("");
+      setCoverPhoto("");
+      setGalleryPhotos([]);
       refetchHotels();
     } catch (error: any) {
       toast.error(error?.data?.message || "Failed to create room.");
@@ -170,6 +232,66 @@ export default function HotelRoomsPage() {
             />
           </div>
 
+          {/* Cover Photo */}
+          <div>
+            <label className="block text-xs font-bold text-text-secondary mb-1">Room Cover Photo *</label>
+            <div className="flex items-center gap-4">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleCoverUpload}
+                className="hidden"
+                id="room-cover-upload"
+              />
+              <label
+                htmlFor="room-cover-upload"
+                className="px-4 py-2 border border-border-custom text-xs font-bold text-text-primary bg-bg-secondary hover:bg-bg-secondary/80 cursor-pointer transition rounded-none inline-block"
+              >
+                {isUploadingCover ? "Uploading..." : "Select Cover Photo"}
+              </label>
+              {coverPhoto && (
+                <img
+                  src={coverPhoto}
+                  alt="Cover preview"
+                  className="w-16 h-16 object-cover border border-border-custom"
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Gallery Photos */}
+          <div>
+            <label className="block text-xs font-bold text-text-secondary mb-1">Gallery Photos (Optional)</label>
+            <div className="space-y-3">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleGalleryUpload}
+                className="hidden"
+                id="room-gallery-upload"
+              />
+              <label
+                htmlFor="room-gallery-upload"
+                className="px-4 py-2 border border-border-custom text-xs font-bold text-text-primary bg-bg-secondary hover:bg-bg-secondary/80 cursor-pointer transition rounded-none inline-block"
+              >
+                {isUploadingGallery ? "Uploading..." : "Select Gallery Photos"}
+              </label>
+              {galleryPhotos.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {galleryPhotos.map((url, i) => (
+                    <img
+                      key={i}
+                      src={url}
+                      alt="Gallery preview"
+                      className="w-12 h-12 object-cover border border-border-custom"
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           <button
             type="submit"
             disabled={isCreatingRoom}
@@ -203,6 +325,20 @@ export default function HotelRoomsPage() {
                         </span>
                       ))}
                     </div>
+
+                    {/* Room Photos Display */}
+                    {rm.photos && rm.photos.length > 0 && (
+                      <div className="flex gap-2 pt-2">
+                        {rm.photos.map((photo: string, idx: number) => (
+                          <img
+                            key={idx}
+                            src={photo}
+                            alt={`Room Photo ${idx + 1}`}
+                            className="w-10 h-10 object-cover border border-border-custom"
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center space-x-6 text-right shrink-0">

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
-import { useBecomeVendorMutation } from "@/redux/api/auth/authApi";
+import { useBecomeVendorMutation, useUploadFileMutation } from "@/redux/api/auth/authApi";
 import { ClipboardList, ShieldCheck, CheckCircle2, ChevronRight, Home, Compass, Landmark, UploadCloud, Trash2, FileText, X } from "lucide-react";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 export default function BecomeHostPage() {
   const { user } = useSelector((state: RootState) => state.user);
   const [becomeVendorApi, { isLoading }] = useBecomeVendorMutation();
+  const [uploadFileApi] = useUploadFileMutation();
   const router = useRouter();
 
   // Form States
@@ -40,7 +41,8 @@ export default function BecomeHostPage() {
     setFileName(file.name);
     setIsDocUploading(true);
 
-    if (file.type.startsWith("image/")) {
+    const isImage = file.type.startsWith("image/");
+    if (isImage) {
       const reader = new FileReader();
       reader.onload = () => {
         setFilePreview(reader.result as string);
@@ -50,11 +52,28 @@ export default function BecomeHostPage() {
       setFilePreview("pdf");
     }
 
-    setTimeout(() => {
-      setIsDocUploading(false);
-      setVerificationDocUrl(`https://cloudinary.com/docs/nid_${Date.now()}_${file.name}`);
-      toast.success("Document uploaded to Cloudinary secure vault.");
-    }, 1500);
+    const uploadReader = new FileReader();
+    uploadReader.onloadend = async () => {
+      try {
+        const base64File = uploadReader.result as string;
+        const res = await uploadFileApi({ file: base64File }).unwrap();
+        if (res?.success && res?.data) {
+          setVerificationDocUrl(res.data);
+          toast.success("Document uploaded successfully to Cloudinary.");
+        } else {
+          throw new Error("Failed to retrieve upload URL");
+        }
+      } catch (err: any) {
+        console.error("Upload error:", err);
+        toast.error(err?.data?.message || err?.message || "Failed to upload document.");
+        setFileName("");
+        setFilePreview(null);
+        setVerificationDocUrl("");
+      } finally {
+        setIsDocUploading(false);
+      }
+    };
+    uploadReader.readAsDataURL(file);
   };
 
   const handleRemoveFile = () => {

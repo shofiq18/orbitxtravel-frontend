@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { useCreatePackageMutation } from "@/redux/api/tour/tourApi";
+import { useUploadFileMutation } from "@/redux/api/auth/authApi";
 import { Compass, ClipboardCheck, Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
@@ -19,6 +20,7 @@ export default function TourConstructorPage() {
   }
 
   const [createPackage, { isLoading: isPublishing }] = useCreatePackageMutation();
+  const [uploadFile] = useUploadFileMutation();
 
   // Active holds loaded from LocalStorage
   const [lockedRoomHolds, setLockedRoomHolds] = useState<
@@ -39,6 +41,59 @@ export default function TourConstructorPage() {
   const [mealText, setMealText] = useState("Breakfast & Seafood Dinner");
   const [stayText, setStayText] = useState("");
   const [activitiesText, setActivitiesText] = useState("Beach Volleyball, Sunset Parasailing");
+
+  const [coverPhoto, setCoverPhoto] = useState("");
+  const [galleryPhotos, setGalleryPhotos] = useState<string[]>([]);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [isUploadingGallery, setIsUploadingGallery] = useState(false);
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingCover(true);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const res = await uploadFile({ file: reader.result as string }).unwrap();
+        if (res?.success && res?.data) {
+          setCoverPhoto(res.data);
+          toast.success("Cover photo uploaded successfully!");
+        }
+      } catch (err: any) {
+        toast.error("Failed to upload cover photo.");
+      } finally {
+        setIsUploadingCover(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setIsUploadingGallery(true);
+    const uploadedUrls: string[] = [];
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+        const res = await uploadFile({ file: base64 }).unwrap();
+        if (res?.success && res?.data) {
+          uploadedUrls.push(res.data);
+        }
+      }
+      setGalleryPhotos(prev => [...prev, ...uploadedUrls]);
+      toast.success(`${uploadedUrls.length} gallery photos uploaded successfully!`);
+    } catch (err: any) {
+      toast.error("Failed to upload one or more gallery photos.");
+    } finally {
+      setIsUploadingGallery(false);
+    }
+  };
 
   // Load holds from LocalStorage on mount
   useEffect(() => {
@@ -68,13 +123,8 @@ export default function TourConstructorPage() {
   const handlePublishPackage = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!pkgTitle || !pkgDestination || !pkgStart || !pkgEnd || !pkgPrice || !lockFee) {
-      toast.error("Please fill out all required tour credentials.");
-      return;
-    }
-
-    if (lockedRoomHolds.length === 0) {
-      toast.error("Please link at least one locked B2B hotel room hold.");
+    if (!coverPhoto) {
+      toast.error("Tour Cover photo is required.");
       return;
     }
 
@@ -91,6 +141,8 @@ export default function TourConstructorPage() {
         stayType: stayText || "Included Luxury Hotel Accommodation",
         mealPlan: mealText,
         customs: activitiesText.split(",").map((a) => a.trim()),
+        coverImage: coverPhoto,
+        photos: galleryPhotos,
       },
       lockedRooms: lockedRoomHolds.map((h) => ({
         roomId: h.roomId,
@@ -110,6 +162,8 @@ export default function TourConstructorPage() {
       setLockFee("");
       setLockedRoomHolds([]);
       setStayText("");
+      setCoverPhoto("");
+      setGalleryPhotos([]);
       router.push("/");
     } catch (error: any) {
       toast.error(error?.data?.message || "Failed to create tour package.");
@@ -259,6 +313,66 @@ export default function TourConstructorPage() {
                 onChange={(e) => setActivitiesText(e.target.value)}
                 className="w-full px-3 py-2 text-sm text-text-primary border border-border-custom bg-bg-secondary outline-none focus:border-theme-primary rounded-none"
               />
+            </div>
+          </div>
+
+          {/* Cover Photo */}
+          <div>
+            <label className="block text-xs font-bold text-text-secondary mb-1">Tour Cover Photo *</label>
+            <div className="flex items-center gap-4">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleCoverUpload}
+                className="hidden"
+                id="tour-cover-upload"
+              />
+              <label
+                htmlFor="tour-cover-upload"
+                className="px-4 py-2 border border-border-custom text-xs font-bold text-text-primary bg-bg-secondary hover:bg-bg-secondary/80 cursor-pointer transition rounded-none inline-block"
+              >
+                {isUploadingCover ? "Uploading..." : "Select Cover Photo"}
+              </label>
+              {coverPhoto && (
+                <img
+                  src={coverPhoto}
+                  alt="Cover preview"
+                  className="w-16 h-16 object-cover border border-border-custom"
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Gallery Photos */}
+          <div>
+            <label className="block text-xs font-bold text-text-secondary mb-1">Gallery Photos (Optional)</label>
+            <div className="space-y-3">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleGalleryUpload}
+                className="hidden"
+                id="tour-gallery-upload"
+              />
+              <label
+                htmlFor="tour-gallery-upload"
+                className="px-4 py-2 border border-border-custom text-xs font-bold text-text-primary bg-bg-secondary hover:bg-bg-secondary/80 cursor-pointer transition rounded-none inline-block"
+              >
+                {isUploadingGallery ? "Uploading..." : "Select Gallery Photos"}
+              </label>
+              {galleryPhotos.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {galleryPhotos.map((url, i) => (
+                    <img
+                      key={i}
+                      src={url}
+                      alt="Gallery preview"
+                      className="w-12 h-12 object-cover border border-border-custom"
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
