@@ -72,7 +72,7 @@ export default function LoginForm() {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center p-4 md:p-6">
-      <div className="w-full max-w-xl bg-bg-primary border border-border-custom shadow-none p-8 md:p-10 rounded-none">
+      <div className="w-full max-w-md bg-bg-primary shadow-none p-6 sm:p-8 md:p-10 rounded-none">
         
         {/* Header */}
         <div className="mb-8 text-center">

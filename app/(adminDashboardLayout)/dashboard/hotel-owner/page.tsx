@@ -6,6 +6,7 @@ import { RootState } from "@/redux/store";
 import {
   useGetHotelsQuery,
   useCreateHotelMutation,
+  useUpdateHotelMutation,
 } from "@/redux/api/hotel/hotelApi";
 import { useUploadFileMutation } from "@/redux/api/auth/authApi";
 import { Home, ShieldCheck, Loader2, Plus } from "lucide-react";
@@ -30,18 +31,52 @@ export default function HotelPropertyPage() {
   const activeHotel = myHotels[0];
 
   const [createHotel, { isLoading: isCreatingHotel }] = useCreateHotelMutation();
+  const [updateHotel, { isLoading: isUpdatingHotel }] = useUpdateHotelMutation();
   const [uploadFile] = useUploadFileMutation();
+ 
+  // Edit policies state
+  const [isEditingPolicies, setIsEditingPolicies] = useState(false);
 
   // Create Hotel Form States
   const [hotelName, setHotelName] = useState("");
   const [hotelAddress, setHotelAddress] = useState("");
   const [hotelDesc, setHotelDesc] = useState("");
   const [amenitiesText, setAmenitiesText] = useState("Wi-Fi, Swimming Pool, Ocean View");
+  const [checkInTime, setCheckInTime] = useState("14:00");
+  const [checkOutTime, setCheckOutTime] = useState("12:00");
 
   const [coverPhoto, setCoverPhoto] = useState("");
   const [galleryPhotos, setGalleryPhotos] = useState<string[]>([]);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingGallery, setIsUploadingGallery] = useState(false);
+ 
+  const handleStartEdit = () => {
+    if (activeHotel) {
+      setCheckInTime(activeHotel.checkInTime || "14:00");
+      setCheckOutTime(activeHotel.checkOutTime || "12:00");
+      setIsEditingPolicies(true);
+    }
+  };
+ 
+  const handleUpdatePolicies = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeHotel) return;
+ 
+    try {
+      const response = await updateHotel({
+        id: activeHotel.id,
+        body: {
+          checkInTime,
+          checkOutTime,
+        },
+      }).unwrap();
+      toast.success("Check-in/out policies updated successfully!");
+      setIsEditingPolicies(false);
+      refetchHotels();
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to update property policies.");
+    }
+  };
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -110,6 +145,8 @@ export default function HotelPropertyPage() {
         description: hotelDesc,
         amenities: amenitiesText.split(",").map((a) => a.trim()),
         photos: [coverPhoto, ...galleryPhotos],
+        checkInTime,
+        checkOutTime,
       }).unwrap();
       toast.success(response?.message || "Hotel property listed successfully!");
       refetchHotels();
@@ -202,6 +239,29 @@ export default function HotelPropertyPage() {
                 className="w-full px-3 py-2 text-sm text-text-primary border border-border-custom bg-bg-secondary outline-none focus:border-theme-primary rounded-none"
               />
             </div>
+ 
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-text-secondary mb-1.5">Standard Check-In Time</label>
+                <input
+                  type="time"
+                  required
+                  value={checkInTime}
+                  onChange={(e) => setCheckInTime(e.target.value)}
+                  className="w-full px-3 py-2 text-sm text-text-primary border border-border-custom bg-bg-secondary outline-none focus:border-theme-primary rounded-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-text-secondary mb-1.5">Standard Check-Out Time</label>
+                <input
+                  type="time"
+                  required
+                  value={checkOutTime}
+                  onChange={(e) => setCheckOutTime(e.target.value)}
+                  className="w-full px-3 py-2 text-sm text-text-primary border border-border-custom bg-bg-secondary outline-none focus:border-theme-primary rounded-none"
+                />
+              </div>
+            </div>
 
             {/* Cover Photo */}
             <div>
@@ -273,13 +333,66 @@ export default function HotelPropertyPage() {
             </button>
           </form>
         </div>
+      ) : isEditingPolicies ? (
+        <form onSubmit={handleUpdatePolicies} className="max-w-2xl border border-border-custom bg-bg-primary p-6 space-y-6 rounded-none">
+          <h3 className="text-lg font-bold text-text-primary border-b border-border-custom pb-2">
+            Update Property Policies
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-text-secondary mb-1.5">Standard Check-In Time</label>
+              <input
+                type="time"
+                required
+                value={checkInTime}
+                onChange={(e) => setCheckInTime(e.target.value)}
+                className="w-full px-3 py-2 text-sm text-text-primary border border-border-custom bg-bg-secondary outline-none focus:border-theme-primary rounded-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-text-secondary mb-1.5">Standard Check-Out Time</label>
+              <input
+                type="time"
+                required
+                value={checkOutTime}
+                onChange={(e) => setCheckOutTime(e.target.value)}
+                className="w-full px-3 py-2 text-sm text-text-primary border border-border-custom bg-bg-secondary outline-none focus:border-theme-primary rounded-none"
+              />
+            </div>
+          </div>
+          <div className="flex items-center space-x-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setIsEditingPolicies(false)}
+              className="w-1/2 border border-border-custom text-text-secondary font-bold py-2.5 text-xs hover:bg-bg-secondary transition rounded-none cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isUpdatingHotel}
+              className="w-1/2 bg-btn-primary text-btn-text-primary font-bold py-2.5 text-xs hover:bg-opacity-95 transition rounded-none cursor-pointer flex justify-center items-center space-x-2"
+            >
+              {isUpdatingHotel && <Loader2 className="h-4 w-4 animate-spin" />}
+              <span>Save Policies</span>
+            </button>
+          </div>
+        </form>
       ) : (
         <div className="border border-border-custom bg-bg-primary p-6 space-y-6 rounded-none">
-          <h3 className="text-lg font-bold text-text-primary border-b border-border-custom pb-2">
-            Hotel Property Coordinates
-          </h3>
+          <div className="flex items-center justify-between border-b border-border-custom pb-2">
+            <h3 className="text-lg font-bold text-text-primary">
+              Hotel Property Coordinates
+            </h3>
+            <button
+              onClick={handleStartEdit}
+              className="bg-bg-secondary border border-border-custom text-text-primary hover:bg-theme-secondary/10 hover:text-theme-secondary font-bold px-3 py-1.5 text-xs rounded-none cursor-pointer transition-all"
+            >
+              Update Policies
+            </button>
+          </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-text-secondary">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-text-secondary">
             <div>
               <span className="block font-bold text-text-primary text-[10px]">Property Name</span>
               <span className="text-base text-text-primary font-bold">{activeHotel.name}</span>
@@ -287,6 +400,10 @@ export default function HotelPropertyPage() {
             <div>
               <span className="block font-bold text-text-primary text-[10px]">Address</span>
               <span>{activeHotel.address}</span>
+            </div>
+            <div>
+              <span className="block font-bold text-text-primary text-[10px]">Standard Check-In / Check-Out</span>
+              <span>Check-In: <strong>{activeHotel.checkInTime || "14:00"}</strong> | Check-Out: <strong>{activeHotel.checkOutTime || "12:00"}</strong></span>
             </div>
           </div>
 

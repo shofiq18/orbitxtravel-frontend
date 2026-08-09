@@ -46,6 +46,55 @@ export default function TourConstructorPage() {
   const [galleryPhotos, setGalleryPhotos] = useState<string[]>([]);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingGallery, setIsUploadingGallery] = useState(false);
+ 
+  // Itinerary Planner States
+  const [itinerary, setItinerary] = useState<{ day: number; title: string; description: string; image?: string }[]>([
+    { day: 1, title: "", description: "", image: "" }
+  ]);
+ 
+  const handleAddItineraryDay = () => {
+    setItinerary((prev) => [
+      ...prev,
+      { day: prev.length + 1, title: "", description: "", image: "" },
+    ]);
+  };
+ 
+  const handleRemoveItineraryDay = (index: number) => {
+    setItinerary((prev) => {
+      const updated = prev.filter((_, idx) => idx !== index);
+      return updated.map((item, idx) => ({ ...item, day: idx + 1 }));
+    });
+  };
+ 
+  const handleUpdateItineraryField = (index: number, field: "title" | "description" | "image", value: string) => {
+    setItinerary((prev) =>
+      prev.map((item, idx) => (idx === index ? { ...item, [field]: value } : item))
+    );
+  };
+ 
+  // Itinerary photo upload helper
+  const [uploadingDayIdx, setUploadingDayIdx] = useState<number | null>(null);
+ 
+  const handleDayPhotoUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingDayIdx(index);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const res = await uploadFile({ file: reader.result as string }).unwrap();
+        if (res?.success && res?.data) {
+          handleUpdateItineraryField(index, "image", res.data);
+          toast.success(`Day ${index + 1} photo uploaded successfully!`);
+        }
+      } catch (err: any) {
+        toast.error("Failed to upload day photo.");
+      } finally {
+        setUploadingDayIdx(null);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -144,6 +193,7 @@ export default function TourConstructorPage() {
         coverImage: coverPhoto,
         photos: galleryPhotos,
       },
+      itinerary: itinerary.filter(day => day.title.trim() !== ""),
       lockedRooms: lockedRoomHolds.map((h) => ({
         roomId: h.roomId,
         quantity: h.quantity,
@@ -151,7 +201,7 @@ export default function TourConstructorPage() {
         checkOutDate: h.checkOutDate,
       })),
     };
-
+ 
     try {
       await createPackage(payload).unwrap();
       toast.success("Tour package launched successfully!");
@@ -164,6 +214,7 @@ export default function TourConstructorPage() {
       setStayText("");
       setCoverPhoto("");
       setGalleryPhotos([]);
+      setItinerary([{ day: 1, title: "", description: "", image: "" }]);
       router.push("/");
     } catch (error: any) {
       toast.error(error?.data?.message || "Failed to create tour package.");
@@ -315,7 +366,96 @@ export default function TourConstructorPage() {
               />
             </div>
           </div>
-
+ 
+          {/* Itinerary Constructor Section */}
+          <div className="border-t border-border-custom pt-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-border-custom pb-2">
+              <h4 className="text-sm font-bold text-text-primary uppercase tracking-wider">Tour Itinerary Planner</h4>
+              <button
+                type="button"
+                onClick={handleAddItineraryDay}
+                className="bg-theme-secondary text-white text-xs font-bold px-3 py-1.5 hover:bg-opacity-95 transition rounded-none cursor-pointer"
+              >
+                + Add Day
+              </button>
+            </div>
+ 
+            <div className="space-y-4">
+              {itinerary.map((item, idx) => (
+                <div key={idx} className="border border-border-custom p-4 bg-bg-secondary/40 space-y-3 rounded-none relative">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-theme-primary">Day {item.day}</span>
+                    {itinerary.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveItineraryDay(idx)}
+                        className="text-xs font-bold text-red-500 hover:text-red-700 transition"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+ 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-text-secondary mb-1">Day Title *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Arrival in Paro & Hotel Transfer"
+                        value={item.title}
+                        onChange={(e) => handleUpdateItineraryField(idx, "title", e.target.value)}
+                        className="w-full px-3 py-2 text-xs text-text-primary border border-border-custom bg-bg-primary outline-none focus:border-theme-primary rounded-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-text-secondary mb-1">Day Photo (Optional)</label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleDayPhotoUpload(idx, e)}
+                          className="hidden"
+                          id={`itinerary-day-upload-${idx}`}
+                        />
+                        <label
+                          htmlFor={`itinerary-day-upload-${idx}`}
+                          className="px-4 py-2 border border-border-custom text-xs font-bold text-text-primary bg-bg-primary hover:bg-bg-secondary cursor-pointer transition rounded-none text-center shrink-0 block"
+                        >
+                          {uploadingDayIdx === idx ? "Uploading..." : item.image ? "Change Photo" : "Upload Photo"}
+                        </label>
+                        {item.image && (
+                          <div className="flex items-center gap-2">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={item.image}
+                              alt={`Preview Day ${item.day}`}
+                              className="w-10 h-10 object-cover border border-border-custom"
+                            />
+                            <span className="text-[10px] text-text-light truncate max-w-[120px] font-semibold">
+                              Uploaded
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+ 
+                  <div>
+                    <label className="block text-[10px] font-bold text-text-secondary mb-1">Day Plan / Activities Description *</label>
+                    <textarea
+                      required
+                      placeholder="e.g. Upon arrival, we will complete visa formalities and proceed to our hotel. In the evening we will visit the local market."
+                      value={item.description}
+                      onChange={(e) => handleUpdateItineraryField(idx, "description", e.target.value)}
+                      className="w-full px-3 py-2 text-xs text-text-primary border border-border-custom bg-bg-primary outline-none focus:border-theme-primary h-20 rounded-none resize-none"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+ 
           {/* Cover Photo */}
           <div>
             <label className="block text-xs font-bold text-text-secondary mb-1">Tour Cover Photo *</label>

@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useGetPackageByIdQuery } from "@/redux/api/tour/tourApi";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
-import { Bus, Hotel, Utensils, ShieldCheck, Compass, Info, Loader2, ArrowLeft, Check, Ticket } from "lucide-react";
+import { Bus, Hotel, Utensils, ShieldCheck, Compass, Info, Loader2, ArrowLeft, ArrowRight, Check, Ticket, Clock } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 
@@ -19,6 +19,21 @@ export default function TourDetailsPage() {
 
   const { user } = useSelector((state: RootState) => state.user);
   const [seatsBooked, setSeatsBooked] = useState(1);
+ 
+  // Lightbox Zoom Modal States
+  const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
+ 
+  // Itinerary Scroll Refs
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const scroll = (direction: "left" | "right") => {
+    if (scrollRef.current) {
+      const scrollAmount = 340;
+      scrollRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth"
+      });
+    }
+  };
 
   const handleBookNow = () => {
     if (!user) {
@@ -73,12 +88,13 @@ export default function TourDetailsPage() {
 
       {/* Cover Image banner */}
       {((pkg.inclusions as any)?.coverImage) && (
-        <div className="w-full h-80 md:h-[450px] bg-bg-secondary border border-border-custom overflow-hidden relative rounded-none">
+        <div className="w-full h-80 md:h-[450px] bg-bg-secondary border border-border-custom overflow-hidden relative rounded-none cursor-zoom-in">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={(pkg.inclusions as any).coverImage}
             alt={pkg.title}
-            className="w-full h-full object-cover"
+            onClick={() => setFullScreenImage((pkg.inclusions as any).coverImage)}
+            className="w-full h-full object-cover hover:scale-[1.01] transition-transform duration-300"
           />
         </div>
       )}
@@ -168,6 +184,73 @@ export default function TourDetailsPage() {
               </div>
             </div>
           )}
+ 
+          {/* Itinerary Snapping Timeline Slider (Red Clock style) */}
+          {pkg.itinerary && pkg.itinerary.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-border-custom pb-2">
+                <h3 className="text-xl font-bold text-text-primary tracking-wide">Tour Itinerary</h3>
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => scroll("left")}
+                    className="p-2 border border-border-custom bg-bg-primary text-text-primary hover:bg-bg-secondary transition rounded-none cursor-pointer"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scroll("right")}
+                    className="p-2 border border-border-custom bg-bg-primary text-text-primary hover:bg-bg-secondary transition rounded-none cursor-pointer"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+ 
+              <div
+                ref={scrollRef}
+                className="flex overflow-x-auto gap-6 scroll-smooth snap-x snap-mandatory scrollbar-none pb-4"
+                style={{ scrollbarWidth: "none" }}
+              >
+                {pkg.itinerary.map((item: any, idx: number) => (
+                  <div
+                    key={idx}
+                    className="w-[320px] shrink-0 border border-border-custom bg-bg-primary relative flex flex-col snap-start overflow-hidden group"
+                  >
+                    {/* Day image layer */}
+                    <div className="relative h-44 w-full bg-bg-secondary overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent z-10"></div>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.image || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&auto=format&fit=crop&q=60"}
+                        alt={`Day ${item.day}`}
+                        onClick={() => setFullScreenImage(item.image || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&auto=format&fit=crop&q=60")}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-zoom-in"
+                      />
+                      
+                      {/* Day Green Badge */}
+                      <span className="absolute top-3 left-3 z-20 bg-theme-secondary text-white text-[10px] font-bold px-2.5 py-1 rounded-none">
+                        Day {item.day}
+                      </span>
+ 
+                      {/* Day Title Overlay */}
+                      <div className="absolute bottom-3 left-3 right-3 z-20">
+                        <h4 className="text-sm font-extrabold text-white leading-snug">
+                          {item.title}
+                        </h4>
+                      </div>
+                    </div>
+ 
+                    {/* Day detail description */}
+                    <div className="p-4 flex-grow space-y-2 max-h-40 overflow-y-auto text-xs text-text-secondary leading-relaxed bg-bg-primary">
+                      <p>{item.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Tour Gallery */}
           {((pkg.inclusions as any)?.photos) && ((pkg.inclusions as any).photos.length > 0) && (
@@ -175,12 +258,16 @@ export default function TourDetailsPage() {
               <h3 className="text-xl font-bold text-text-primary tracking-wide">Tour Gallery</h3>
               <div className="flex flex-wrap gap-4">
                 {(pkg.inclusions as any).photos.map((photoUrl: string, idx: number) => (
-                  <div key={idx} className="relative w-36 h-28 border border-border-custom bg-bg-secondary overflow-hidden">
+                  <div
+                    key={idx}
+                    onClick={() => setFullScreenImage(photoUrl)}
+                    className="relative w-36 h-28 border border-border-custom bg-bg-secondary overflow-hidden cursor-pointer hover:border-theme-primary transition-all group"
+                  >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={photoUrl}
                       alt={`Tour Gallery ${idx + 1}`}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300 group-hover:scale-105"
                     />
                   </div>
                 ))}
@@ -300,7 +387,29 @@ export default function TourDetailsPage() {
         </div>
 
       </div>
-
+ 
+      {/* Lightbox Modal */}
+      {fullScreenImage && (
+        <div
+          onClick={() => setFullScreenImage(null)}
+          className="fixed inset-0 bg-black/90 z-[999] flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-200"
+        >
+          <div className="relative max-w-5xl max-h-[90vh] w-full h-full flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={fullScreenImage}
+              alt="Full screen gallery view"
+              className="max-w-full max-h-full object-contain shadow-2xl"
+            />
+            <button
+              onClick={() => setFullScreenImage(null)}
+              className="absolute top-4 right-4 text-white bg-black/60 hover:bg-black/85 p-2 rounded-full border border-gray-700 font-extrabold text-sm w-10 h-10 flex items-center justify-center cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

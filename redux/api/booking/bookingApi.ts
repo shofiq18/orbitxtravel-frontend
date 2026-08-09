@@ -13,7 +13,7 @@ export const bookingApi = baseApi.injectEndpoints({
     }),
     payBooking: builder.mutation({
       query: ({ bookingId, body }) => ({
-        url: `/bookings/${bookingId}/pay`,
+        url: `/bookings/${bookingId}/pay-simulate`,
         method: "POST",
         body,
       }),

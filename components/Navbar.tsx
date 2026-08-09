@@ -72,9 +72,9 @@ export default function Navbar() {
         {/* Desktop Navigation Links */}
         <div className="hidden md:flex items-center space-x-8 text-sm font-medium text-text-secondary">
           <Link
-            href="/"
+            href="/tours"
             className={`hover:text-theme-primary transition-colors py-2 ${
-              pathname === "/" ? "text-theme-primary border-b-2 border-theme-primary" : ""
+              pathname === "/tours" ? "text-theme-primary border-b-2 border-theme-primary" : ""
             }`}
           >
             Find Tours
@@ -242,7 +242,7 @@ export default function Navbar() {
       {isMobileMenuOpen && (
         <div className="md:hidden w-full bg-bg-primary border-t border-border-custom py-4 px-4 space-y-3 z-40 relative animate-in fade-in slide-in-from-top-3 duration-200">
           <Link
-            href="/"
+            href="/tours"
             onClick={() => setIsMobileMenuOpen(false)}
             className="block text-sm font-semibold text-text-secondary hover:text-theme-primary py-2"
           >

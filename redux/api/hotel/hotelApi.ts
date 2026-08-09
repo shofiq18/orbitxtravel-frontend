@@ -26,6 +26,14 @@ export const hotelApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
+    updateHotel: builder.mutation({
+      query: ({ id, body }) => ({
+        url: `/hotels/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["User"],
+    }),
     createRoom: builder.mutation({
       query: ({ hotelId, body }) => ({
         url: `/hotels/${hotelId}/rooms`,
@@ -56,6 +64,7 @@ export const {
   useGetHotelsQuery,
   useGetHotelByIdQuery,
   useCreateHotelMutation,
+  useUpdateHotelMutation,
   useCreateRoomMutation,
   useBlockRoomDatesMutation,
   useGetBlockedRoomDatesQuery,

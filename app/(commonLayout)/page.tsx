@@ -2,13 +2,16 @@
 
 import { useState } from "react";
 import { useGetPackagesQuery } from "@/redux/api/tour/tourApi";
-import { Compass, MapPin, Calendar, Search, ShieldCheck, Bus, Hotel, UtensilsCrossed, AlertTriangle } from "lucide-react";
+import { useGetHotelsQuery } from "@/redux/api/hotel/hotelApi";
+import { Compass, MapPin, Calendar, Search, ShieldCheck, Bus, Hotel, UtensilsCrossed, AlertTriangle, Loader2, Clock } from "lucide-react";
 import Link from "next/link";
 
 export default function Home() {
   // Search state variables
+  const [searchTab, setSearchTab] = useState<"tours" | "hotels">("tours");
   const [destination, setDestination] = useState("");
   const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
 
   // Filters to send to API
@@ -18,16 +21,32 @@ export default function Home() {
     verifiedOnly?: boolean;
   }>({});
 
+  const [hotelFilters, setHotelFilters] = useState<{
+    address?: string;
+    verifiedOnly?: string;
+  }>({});
+
   const { data: packagesResponse, isLoading, error } = useGetPackagesQuery(filters);
   const packagesList = packagesResponse?.data || [];
 
+  const { data: hotelsResponse, isLoading: isLoadingHotels, error: hotelsError } = useGetHotelsQuery(hotelFilters);
+  const hotelsList = hotelsResponse?.data || [];
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const activeFilters: typeof filters = {};
-    if (destination) activeFilters.destination = destination;
-    if (startDate) activeFilters.startDate = startDate;
-    if (verifiedOnly) activeFilters.verifiedOnly = true;
-    setFilters(activeFilters);
+    
+    // Set filters for Tour Packages
+    const activePkgFilters: typeof filters = {};
+    if (destination) activePkgFilters.destination = destination;
+    if (startDate) activePkgFilters.startDate = startDate;
+    if (verifiedOnly) activePkgFilters.verifiedOnly = true;
+    setFilters(activePkgFilters);
+
+    // Set filters for Stays/Hotels
+    const activeHotelFilters: typeof hotelFilters = {};
+    if (destination) activeHotelFilters.address = destination;
+    if (verifiedOnly) activeHotelFilters.verifiedOnly = "true";
+    setHotelFilters(activeHotelFilters);
   };
 
   return (
@@ -48,66 +67,148 @@ export default function Home() {
             Book verified seat locks and luxury hotel stays curated by global tour organizers on orbitX Travel.
           </p>
 
+          {/* Search Tabs */}
+          <div className="max-w-4xl mx-auto mt-8 flex justify-start space-x-1">
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTab("tours");
+              }}
+              className={`px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all rounded-none cursor-pointer ${
+                searchTab === "tours"
+                  ? "bg-btn-primary text-btn-text-primary"
+                  : "bg-bg-primary text-text-primary border border-border-custom hover:bg-bg-secondary"
+              }`}
+            >
+              Tour Packages
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTab("hotels");
+              }}
+              className={`px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all rounded-none cursor-pointer ${
+                searchTab === "hotels"
+                  ? "bg-btn-primary text-btn-text-primary"
+                  : "bg-bg-primary text-text-primary border border-border-custom hover:bg-bg-secondary"
+              }`}
+            >
+              Hotels & Stays
+            </button>
+          </div>
+
           {/* Search Inputs Container */}
           <form
             onSubmit={handleSearch}
-            className="max-w-4xl mx-auto bg-bg-primary border border-border-custom p-4 md:p-6 text-text-primary grid grid-cols-1 md:grid-cols-4 gap-4 mt-8 rounded-none shadow-2xl"
+            className="max-w-4xl mx-auto bg-bg-primary border border-border-custom p-4 md:p-6 text-text-primary rounded-none shadow-2xl"
           >
-            {/* Destination Search */}
-            <div className="text-left">
-              <label className="block text-xs font-bold text-text-secondary mb-1">Destination</label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-3 h-4 w-4 text-text-light" />
-                <input
-                  type="text"
-                  placeholder="e.g. Cox's Bazar"
-                  value={destination}
-                  onChange={(e) => setDestination(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 border border-border-custom bg-bg-secondary text-sm outline-none focus:border-theme-primary rounded-none"
-                />
+            {searchTab === "tours" ? (
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                {/* Destination Search */}
+                <div className="flex items-center space-x-3 bg-bg-secondary border border-border-custom p-2.5 rounded-none focus-within:border-theme-primary focus-within:ring-1 focus-within:ring-theme-primary transition-all md:col-span-2 text-left">
+                  <MapPin className="absolute left-3 top-4 h-5 w-5 text-text-light shrink-0" />
+                  <div className="flex-grow pl-7">
+                    <span className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider">Destination</span>
+                    <input
+                      type="text"
+                      placeholder="Where are you going?"
+                      value={destination}
+                      onChange={(e) => setDestination(e.target.value)}
+                      className="w-full bg-transparent text-sm text-text-primary outline-none mt-0.5"
+                    />
+                  </div>
+                </div>
+
+                {/* Travel Dates Range Picker (Red Clock Icon) */}
+                <div className="flex items-center space-x-3 bg-bg-secondary border border-border-custom p-2.5 rounded-none focus-within:border-theme-primary focus-within:ring-1 focus-within:ring-theme-primary transition-all md:col-span-2 text-left">
+                  <Clock className="h-5 w-5 text-red-500 shrink-0" />
+                  <div className="grid grid-cols-2 gap-2 flex-grow">
+                    <div>
+                      <span className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider">Travel from</span>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="w-full bg-transparent text-xs text-text-primary outline-none mt-0.5"
+                      />
+                    </div>
+                    <div className="border-l border-border-custom pl-2">
+                      <span className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider">Travel to</span>
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="w-full bg-transparent text-xs text-text-primary outline-none mt-0.5"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Search Button */}
+                <div className="flex items-stretch">
+                  <button
+                    type="submit"
+                    className="w-full bg-btn-primary text-btn-text-primary hover:bg-opacity-95 font-bold flex items-center justify-center space-x-2 cursor-pointer transition rounded-none text-xs h-full py-3"
+                  >
+                    <Search className="h-4 w-4" />
+                    <span>Search Tours</span>
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                {/* Destination Input (Bed/Hotel Icon) */}
+                <div className="flex items-center space-x-3 bg-bg-secondary border border-border-custom p-2.5 rounded-none focus-within:border-theme-primary focus-within:ring-1 focus-within:ring-theme-primary transition-all md:col-span-2 text-left">
+                  <Hotel className="h-5 w-5 text-text-light shrink-0" />
+                  <div className="flex-grow">
+                    <span className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider">Enter destination</span>
+                    <input
+                      type="text"
+                      placeholder="Where are you going?"
+                      value={destination}
+                      onChange={(e) => setDestination(e.target.value)}
+                      className="w-full bg-transparent text-sm text-text-primary outline-none mt-0.5"
+                    />
+                  </div>
+                </div>
 
-            {/* Travel Date */}
-            <div className="text-left">
-              <label className="block text-xs font-bold text-text-secondary mb-1">Departure Date</label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-3 h-4 w-4 text-text-light" />
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 border border-border-custom bg-bg-secondary text-sm outline-none focus:border-theme-primary rounded-none"
-                />
+                {/* Dates Picker Box */}
+                <div className="flex items-center space-x-3 bg-bg-secondary border border-border-custom p-2.5 rounded-none focus-within:border-theme-primary focus-within:ring-1 focus-within:ring-theme-primary transition-all md:col-span-2 text-left">
+                  <Calendar className="h-5 w-5 text-text-light shrink-0" />
+                  <div className="grid grid-cols-2 gap-2 flex-grow">
+                    <div>
+                      <span className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider">Check-in date</span>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="w-full bg-transparent text-xs text-text-primary outline-none mt-0.5"
+                      />
+                    </div>
+                    <div className="border-l border-border-custom pl-2">
+                      <span className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider">Check-out date</span>
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="w-full bg-transparent text-xs text-text-primary outline-none mt-0.5"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Search Button */}
+                <div className="flex items-stretch">
+                  <button
+                    type="submit"
+                    className="w-full bg-btn-primary text-btn-text-primary hover:bg-opacity-95 font-bold flex items-center justify-center space-x-2 cursor-pointer transition rounded-none text-xs h-full py-3"
+                  >
+                    <Search className="h-4 w-4" />
+                    <span>Search Hotels</span>
+                  </button>
+                </div>
               </div>
-            </div>
-
-            {/* Verification Toggle */}
-            <div className="flex items-center space-x-2 md:pt-5 pt-2 text-left justify-start md:justify-center">
-              <input
-                type="checkbox"
-                id="verifiedOnly"
-                checked={verifiedOnly}
-                onChange={(e) => setVerifiedOnly(e.target.checked)}
-                className="h-4 w-4 border-border-custom accent-theme-secondary rounded-none"
-              />
-              <label htmlFor="verifiedOnly" className="text-xs font-bold text-text-secondary flex items-center space-x-1 cursor-pointer select-none">
-                <ShieldCheck className="h-4 w-4 text-theme-secondary inline" />
-                <span>Verified Hosts Only</span>
-              </label>
-            </div>
-
-            {/* Search CTA */}
-            <div className="md:pt-4">
-              <button
-                type="submit"
-                className="w-full bg-btn-primary text-btn-text-primary hover:bg-opacity-95 font-bold h-11 flex items-center justify-center space-x-2 cursor-pointer transition rounded-none text-xs"
-              >
-                <Search className="h-4 w-4" />
-                <span>Search</span>
-              </button>
-            </div>
-
+            )}
           </form>
         </div>
       </section>
@@ -261,7 +362,133 @@ export default function Home() {
             );
           })}
         </div>
+      </section>
 
+      {/* Featured Hotels Section */}
+      <section className="w-full max-w-[1440px] mx-auto px-4 md:px-6 mt-16">
+        <div className="flex items-center justify-between mb-8 border-b border-border-custom pb-4">
+          <div>
+            <h3 className="text-2xl font-bold text-text-primary tracking-tight">Featured Hotels</h3>
+            <p className="text-sm text-text-light mt-1">Direct bookings on verified premium hotels & stays.</p>
+          </div>
+          <Link href="/hotels" className="text-sm font-bold text-theme-primary hover:underline">
+            View All Hotels &rarr;
+          </Link>
+        </div>
+
+        {/* Loading / Error States for Hotels */}
+        {isLoadingHotels && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-12">
+            {[1, 2, 3].map((n) => (
+              <div key={n} className="border border-border-custom p-4 space-y-4 animate-pulse bg-bg-primary">
+                <div className="h-48 bg-bg-secondary w-full"></div>
+                <div className="h-4 bg-bg-secondary w-2/3"></div>
+                <div className="h-4 bg-bg-secondary w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {hotelsError && (
+          <div className="p-6 border border-red-200 bg-red-50 text-red-700 flex items-center space-x-3 rounded-none max-w-xl mx-auto my-12">
+            <AlertTriangle className="h-6 w-6 shrink-0" />
+            <div>
+              <p className="font-bold">Error loading hotels</p>
+              <p className="text-xs">Failed to connect to the backend server. Please verify your connection status.</p>
+            </div>
+          </div>
+        )}
+
+        {!isLoadingHotels && !hotelsError && hotelsList.length === 0 && (
+          <div className="text-center py-16 border border-dashed border-border-custom bg-bg-primary max-w-md mx-auto rounded-none">
+            <Hotel className="h-12 w-12 text-text-light mx-auto mb-4" />
+            <h4 className="text-lg font-bold text-text-primary">No Hotels Available</h4>
+            <p className="text-sm text-text-secondary mt-1">Check back later for newly added properties.</p>
+          </div>
+        )}
+
+        {/* Hotels Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {hotelsList.slice(0, 3).map((hotel: any) => {
+            const rooms = hotel.rooms || [];
+            const startingPrice = rooms.length > 0
+              ? Math.min(...rooms.map((r: any) => r.b2cPrice))
+              : null;
+
+            return (
+              <div
+                key={hotel.id}
+                className="bg-bg-primary border border-border-custom flex flex-col justify-between transition-all duration-300 hover:shadow-lg rounded-none group"
+              >
+                {/* Hotel Image */}
+                <div className="relative h-48 w-full bg-bg-secondary overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={hotel.photos?.[0] || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&auto=format&fit=crop&q=80"}
+                    alt={hotel.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  
+                  {/* Verified Badge */}
+                  {hotel.isVerified && (
+                    <span className="absolute top-3 right-3 z-20 bg-theme-secondary text-white px-2.5 py-1 text-[10px] font-bold flex items-center space-x-1 rounded-none">
+                      <ShieldCheck className="h-3 w-3" />
+                      <span>Verified Stay</span>
+                    </span>
+                  )}
+                </div>
+
+                {/* Card Body */}
+                <div className="p-5 flex-grow space-y-4">
+                  <h4 className="text-lg font-bold text-text-primary group-hover:text-theme-primary transition-colors leading-tight line-clamp-1">
+                    {hotel.name}
+                  </h4>
+                  <p className="text-xs text-text-light flex items-center space-x-1">
+                    <MapPin className="h-3.5 w-3.5 text-theme-primary shrink-0" />
+                    <span className="truncate">{hotel.address}</span>
+                  </p>
+                  
+                  {/* Description */}
+                  <p className="text-xs text-text-secondary line-clamp-2">
+                    {hotel.description || "Premium luxury hotel stay offering modern amenities and world-class service."}
+                  </p>
+
+                  {/* Amenities */}
+                  {hotel.amenities && hotel.amenities.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1.5">
+                      {hotel.amenities.slice(0, 3).map((amt: string, idx: number) => (
+                        <span key={idx} className="bg-bg-secondary border border-border-custom text-text-secondary text-[10px] px-2 py-0.5 rounded-none font-semibold">
+                          {amt}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Pricing / Booking Action */}
+                <div className="p-5 pt-0 border-t border-border-custom bg-bg-secondary/40 flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] text-text-light font-bold">Standard Rate</p>
+                    <p className="text-base font-extrabold text-theme-secondary">
+                      {startingPrice ? `BDT ${startingPrice} / Night` : "Contact for rates"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-5 pt-0">
+                  <Link
+                    href={`/hotels/${hotel.id}`}
+                    className="block text-center w-full bg-btn-primary text-btn-text-primary font-bold py-2.5 text-xs hover:bg-opacity-90 transition rounded-none"
+                  >
+                    View Details
+                  </Link>
+                </div>
+
+              </div>
+            );
+          })}
+        </div>
       </section>
 
     </div>
