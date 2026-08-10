@@ -69,10 +69,10 @@ export default function TourB2BRoomsPage() {
   };
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 py-10 min-h-[80vh] space-y-8">
+    <div className="w-full mx-auto px-8 lg:px-16 py-10 min-h-[80vh] space-y-8">
       {/* Page Title */}
       <div className="border-b border-border-custom pb-5">
-        <h1 className="text-2xl font-bold text-text-primary tracking-tight">Lock B2B Partner Rooms</h1>
+        <h1 className="text-2xl font-semibold text-text-primary tracking-wide">Lock B2B Partner Rooms</h1>
         <p className="text-sm text-text-light mt-1">Acquire B2B partner inventory at negotiated rates and place temporary booking holds.</p>
       </div>
 
@@ -104,7 +104,7 @@ export default function TourB2BRoomsPage() {
                   onClick={() => setSelectedHotelId(hotel.id)}
                   className={`w-full text-left p-4 border block transition rounded-none cursor-pointer ${ selectedHotelId === hotel.id ? "border-theme-primary bg-bg-secondary" : "border-border-custom bg-bg-primary hover:bg-bg-secondary" }`}
                 >
-                  <h4 className="font-bold text-text-primary text-sm leading-snug">{hotel.name}</h4>
+                  <h4 className="font-semibold text-text-primary text-sm leading-snug">{hotel.name}</h4>
                   <p className="text-xs text-text-light mt-1">{hotel.address}</p>
                 </button>
               ))}
@@ -131,7 +131,7 @@ export default function TourB2BRoomsPage() {
           ) : (
             <div className="border border-border-custom bg-bg-primary p-6 space-y-6 rounded-none">
               <div>
-                <h3 className="text-lg font-bold text-text-primary flex items-center space-x-2">
+                <h3 className="text-lg font-semibold text-text-primary flex items-center space-x-2">
                   <span>{selectedHotel.name}</span>
                   {selectedHotel.isVerified && <ShieldCheck className="h-5 w-5 text-theme-secondary shrink-0" />}
                 </h3>
@@ -178,7 +178,7 @@ export default function TourB2BRoomsPage() {
 
               {/* Room Lists */}
               <div className="space-y-4">
-                <h4 className="text-xs font-bold text-text-primary">Available Wholesale Rooms</h4>
+                <h4 className="text-xs font-semibold text-text-primary">Available Wholesale Rooms</h4>
                 
                 {(!selectedHotel.rooms || selectedHotel.rooms.length === 0) ? (
                   <div className="text-xs text-text-light text-center py-4 italic border border-border-custom rounded-none">

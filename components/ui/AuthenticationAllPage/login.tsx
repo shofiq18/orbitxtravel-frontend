@@ -72,11 +72,11 @@ export default function LoginForm() {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center p-4 md:p-6">
-      <div className="w-full max-w-md bg-bg-primary shadow-none p-6 sm:p-8 md:p-10 rounded-none">
+      <div className="w-full max-w-lg bg-bg-primary shadow-none p-6 sm:p-8 md:p-10 rounded-none">
         
         {/* Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-extrabold text-text-primary tracking-tight">Welcome Back</h1>
+        <div className="mb-8 text-left">
+          <h1 className="text-3xl font-semibold text-text-primary tracking-wide">Welcome Back</h1>
           <p className="mt-2 text-base text-text-secondary">
             Log in to manage your bookings or listing workspaces.
           </p>

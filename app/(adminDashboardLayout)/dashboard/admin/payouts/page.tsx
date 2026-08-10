@@ -58,17 +58,17 @@ export default function AdminPayoutsPage() {
   };
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 py-10 min-h-[80vh] space-y-8">
+    <div className="w-full mx-auto px-8 lg:px-16 py-10 min-h-[80vh] space-y-8">
       {/* Page Header */}
       <div className="border-b border-border-custom pb-5">
-        <h1 className="text-2xl font-bold text-text-primary tracking-tight">Payout Authorization</h1>
+        <h1 className="text-2xl font-semibold text-text-primary tracking-wide">Payout Authorization</h1>
         <p className="text-sm text-text-light mt-1">Settle net earnings payments directly to vendor host bank accounts.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Payout release form (Col 1) */}
         <form onSubmit={handleReleasePayoutSubmit} className="border border-border-custom bg-bg-primary p-6 space-y-4 rounded-none h-fit">
-          <h3 className="text-base font-bold text-text-primary tracking-wide border-b border-border-custom pb-2">
+          <h3 className="text-base font-semibold text-text-primary tracking-wide border-b border-border-custom pb-2">
             Authorize Settlement Payout
           </h3>
 
@@ -120,7 +120,7 @@ export default function AdminPayoutsPage() {
 
         {/* Payout records list (Col 2) */}
         <div className="lg:col-span-2 border border-border-custom bg-bg-primary p-6 space-y-4 rounded-none h-fit">
-          <h3 className="text-base font-bold text-text-primary tracking-wide border-b border-border-custom pb-2">
+          <h3 className="text-base font-semibold text-text-primary tracking-wide border-b border-border-custom pb-2">
             Settled Payout Disbursals Log
           </h3>
 

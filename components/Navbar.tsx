@@ -61,12 +61,12 @@ export default function Navbar() {
 
   return (
     <nav className="w-full bg-bg-primary border-b border-border-custom sticky top-0 z-50 transition-colors duration-300">
-      <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+      <div className="w-full mx-auto px-8 lg:px-16 h-16 flex items-center justify-between">
         
         {/* Brand Logo */}
         <Link href="/" className="flex items-center space-x-2 text-theme-primary font-bold text-2xl tracking-wide">
           <Globe className="h-6 w-6" />
-          <span>orbitX Travel</span>
+          <span>OrbitX Travel</span>
         </Link>
 
         {/* Desktop Navigation Links */}
@@ -87,26 +87,6 @@ export default function Navbar() {
           >
             Find Hotels
           </Link>
-          
-          {/* Active portal dashboards based on roles */}
-          {user?.currentRole === "hotel_owner" && (
-            <Link href="/hotel-dashboard" className="text-theme-secondary flex items-center space-x-1 hover:opacity-80">
-              <LayoutDashboard className="h-4 w-4" />
-              <span>Hotel Manager</span>
-            </Link>
-          )}
-          {user?.currentRole === "tour_organizer" && (
-            <Link href="/organizer-dashboard" className="text-theme-secondary flex items-center space-x-1 hover:opacity-80">
-              <LayoutDashboard className="h-4 w-4" />
-              <span>Tour Organizer</span>
-            </Link>
-          )}
-          {user?.currentRole === "admin" && (
-            <Link href="/admin-dashboard" className="text-theme-accent flex items-center space-x-1 hover:opacity-80">
-              <LayoutDashboard className="h-4 w-4" />
-              <span>Admin Console</span>
-            </Link>
-          )}
         </div>
 
         {/* Right Action Stack */}
@@ -114,39 +94,7 @@ export default function Navbar() {
           {user ? (
             <div className="flex items-center space-x-4">
               
-              {/* Role Toggle Switcher */}
-              {user.roles && user.roles.length > 1 && (
-                <div className="relative">
-                  <button
-                    onClick={() => setIsRoleSwitcherOpen(!isRoleSwitcherOpen)}
-                    disabled={isSwitching}
-                    className="flex items-center space-x-1 bg-btn-secondary text-btn-text-secondary px-3 py-1.5 text-xs font-semibold border border-border-custom hover:bg-opacity-80 transition-all rounded-none cursor-pointer"
-                  >
-                    <span>Mode: {formatRole(user.currentRole)}</span>
-                    <ChevronDown className="h-3 w-3" />
-                  </button>
 
-                  {isRoleSwitcherOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-bg-primary border border-border-custom shadow-lg py-1 z-50 rounded-none animate-in fade-in slide-in-from-top-1 duration-200">
-                      <div className="px-3 py-1.5 text-xs text-text-light font-bold border-b border-border-custom">
-                        Switch Mode
-                      </div>
-                      {user.roles.map((r) => (
-                        <button
-                          key={r}
-                          onClick={() => handleSwitchRole(r)}
-                          disabled={user.currentRole === r}
-                          className={`w-full text-left px-4 py-2 text-sm hover:bg-bg-secondary transition-colors block ${
-                            user.currentRole === r ? "text-theme-primary font-bold bg-bg-secondary" : "text-text-secondary"
-                          }`}
-                        >
-                          {formatRole(r)}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* Become a Host CTA if traveler-only */}
               {user.roles && user.roles.length === 1 && user.roles.includes("traveler") && (
@@ -176,22 +124,67 @@ export default function Navbar() {
                       <p className="text-xs text-text-light truncate">{user.email}</p>
                     </div>
                     <div className="py-1">
-                      <Link
-                        href="/profile"
-                        onClick={() => setIsProfileDropdownOpen(false)}
-                        className="flex items-center space-x-2 px-4 py-2 text-sm text-text-secondary hover:bg-bg-secondary transition-colors"
-                      >
-                        <UserCheck className="h-4 w-4" />
-                        <span>My Profile</span>
-                      </Link>
-                      {user.roles?.includes("traveler") && user.currentRole !== "traveler" && (
-                        <button
-                          onClick={() => handleSwitchRole("traveler")}
-                          className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-text-secondary hover:bg-bg-secondary transition-colors"
+                      {user.currentRole && ["admin", "hotel_owner", "tour_organizer"].includes(user.currentRole) ? (
+                        <>
+                          <Link
+                            href={
+                              user.currentRole === "hotel_owner"
+                                ? "/dashboard/hotel-owner"
+                                : user.currentRole === "tour_organizer"
+                                ? "/dashboard/tour-organizer"
+                                : "/dashboard/admin"
+                            }
+                            onClick={() => setIsProfileDropdownOpen(false)}
+                            className="flex items-center space-x-2 px-4 py-2 text-sm text-text-secondary hover:bg-bg-secondary transition-colors font-semibold"
+                          >
+                            <LayoutDashboard className="h-4.5 w-4.5 text-theme-primary" />
+                            <span>Dashboard</span>
+                          </Link>
+                          <Link
+                            href="/profile"
+                            onClick={() => setIsProfileDropdownOpen(false)}
+                            className="flex items-center space-x-2 px-4 py-2 text-sm text-text-secondary hover:bg-bg-secondary transition-colors"
+                          >
+                            <UserCheck className="h-4 w-4" />
+                            <span>My Profile</span>
+                          </Link>
+                        </>
+                      ) : (
+                        <Link
+                          href="/profile"
+                          onClick={() => setIsProfileDropdownOpen(false)}
+                          className="flex items-center space-x-2 px-4 py-2 text-sm text-text-secondary hover:bg-bg-secondary transition-colors font-semibold"
                         >
-                          <Compass className="h-4 w-4" />
-                          <span>Switch to Traveler</span>
-                        </button>
+                          <UserCheck className="h-4 w-4" />
+                          <span>My Profile</span>
+                        </Link>
+                      )}
+
+                      {user.roles && user.roles.length > 1 && (
+                        <div className="border-t border-border-custom mt-2 pt-2">
+                          <div className="px-4 py-1 text-[9px] font-bold text-text-light uppercase tracking-wider">
+                            Active Mode
+                          </div>
+                          {user.roles.map((r) => (
+                            <button
+                              key={r}
+                              onClick={() => {
+                                handleSwitchRole(r);
+                              }}
+                              disabled={user.currentRole === r}
+                              className={`w-full text-left px-4 py-1.5 text-xs transition-colors flex items-center justify-between cursor-pointer ${
+                                user.currentRole === r
+                                  ? "text-theme-primary font-bold bg-bg-secondary cursor-default"
+                                  : "text-text-secondary hover:bg-bg-secondary"
+                              }`}
+                            >
+                              <span>{formatRole(r)}</span>
+                              {user.currentRole === r && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-theme-primary"></span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
                       )}
                     </div>
                     <div className="border-t border-border-custom pt-1">
@@ -215,12 +208,6 @@ export default function Navbar() {
                 className="text-sm font-bold text-text-primary hover:text-theme-primary px-3 py-2 transition-colors"
               >
                 Log In
-              </Link>
-              <Link
-                href="/sign-up"
-                className="bg-btn-primary text-btn-text-primary text-sm font-bold px-5 py-2 border border-transparent hover:opacity-90 transition-all rounded-none"
-              >
-                Register
               </Link>
             </div>
           )}
@@ -346,16 +333,9 @@ export default function Navbar() {
               <Link
                 href="/login"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="w-full text-center text-sm font-bold text-text-primary py-2 border border-border-custom rounded-none bg-bg-secondary"
+                className="w-full text-center text-sm font-bold text-text-primary py-2 border border-border-custom rounded-none hover:bg-bg-secondary transition-all"
               >
                 Log In
-              </Link>
-              <Link
-                href="/sign-up"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="w-full text-center text-sm font-bold text-btn-text-primary py-2 bg-btn-primary rounded-none"
-              >
-                Register
               </Link>
             </div>
           )}

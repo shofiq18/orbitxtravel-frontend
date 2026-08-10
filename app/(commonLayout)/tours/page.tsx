@@ -32,25 +32,44 @@ export default function FindToursPage() {
   };
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 py-10 space-y-10">
+    <div className="w-full space-y-12 pb-16">
       
-      {/* Title Header */}
-      <div className="text-center max-w-xl mx-auto space-y-2">
-        <h1 className="text-3xl font-extrabold text-text-primary tracking-tight">Find Tour Packages</h1>
-        <p className="text-sm text-text-secondary">
-          Search and book verified seat locks managed by professional organizers.
-        </p>
-      </div>
+      {/* Hero Banner Section */}
+      <section className="relative w-full h-[420px] bg-bg-dark flex items-center justify-center overflow-hidden transition-colors duration-300">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover z-0"
+        >
+          <source src="/hero-video.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+        <div className="absolute inset-0 bg-black/10 z-0"></div>
 
-      <form
-        onSubmit={handleSearch}
-        className="max-w-4xl mx-auto bg-bg-primary border border-border-custom p-4 md:p-6 text-text-primary rounded-none shadow-md"
-      >
+        {/* Text Container */}
+        <div className="relative z-10 w-full mx-auto px-8 lg:px-16 text-center text-white space-y-4 pb-16">
+          <h1 className="text-4xl md:text-5xl font-semibold tracking-wide">
+            Find Tour Packages
+          </h1>
+          <p className=" text-base md:text-lg max-w-xl mx-auto">
+            Search and book verified seat locks managed by professional organizers.
+          </p>
+        </div>
+      </section>
+
+      {/* Floating Search Section */}
+      <div className="relative z-30 max-w-4xl mx-auto px-8 lg:px-0 -mt-26">
+        <form
+          onSubmit={handleSearch}
+          className="bg-bg-primary border border-border-custom p-4 md:p-6 text-text-primary rounded-none shadow-2xl"
+        >
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {/* Destination Search */}
           <div className="flex items-center space-x-3 bg-bg-secondary border border-border-custom p-2.5 rounded-none focus-within:border-theme-primary focus-within:ring-1 focus-within:ring-theme-primary transition-all md:col-span-2 text-left">
-            <MapPin className="absolute left-3 top-4 h-5 w-5 text-text-light shrink-0" />
-            <div className="flex-grow pl-7">
+            <MapPin className="h-5 w-5 text-text-light shrink-0" />
+            <div className="flex-grow">
               <span className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider">Destination</span>
               <input
                 type="text"
@@ -62,27 +81,50 @@ export default function FindToursPage() {
             </div>
           </div>
 
-          {/* Travel Dates Range Picker (Red Clock Icon) */}
-          <div className="flex items-center space-x-3 bg-bg-secondary border border-border-custom p-2.5 rounded-none focus-within:border-theme-primary focus-within:ring-1 focus-within:ring-theme-primary transition-all md:col-span-2 text-left">
-            <Clock className="h-5 w-5 text-red-500 shrink-0" />
-            <div className="grid grid-cols-2 gap-2 flex-grow">
-              <div>
-                <span className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider">Travel from</span>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full bg-transparent text-xs text-text-primary outline-none mt-0.5"
-                />
+          {/* Travel Dates Range Picker Dropdown */}
+          <div className="relative md:col-span-2 group">
+            <div className="flex items-center space-x-3 bg-bg-secondary border border-border-custom p-2.5 rounded-none cursor-pointer hover:bg-bg-secondary/80 transition-all text-left h-full">
+              <Clock className="h-5 w-5 text-red-500 shrink-0" />
+              <div className="flex-grow">
+                <span className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider">Travel Dates</span>
+                <span className="block text-xs text-text-primary font-semibold mt-0.5">
+                  {startDate && endDate 
+                    ? `${startDate} to ${endDate}`
+                    : startDate 
+                    ? `From ${startDate}`
+                    : endDate 
+                    ? `To ${endDate}`
+                    : "Select travel duration"}
+                </span>
               </div>
-              <div className="border-l border-border-custom pl-2">
-                <span className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider">Travel to</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full bg-transparent text-xs text-text-primary outline-none mt-0.5"
-                />
+            </div>
+
+            {/* Dropdown containing both pickers together */}
+            <div className="absolute left-0 right-0 top-full pt-2 z-50 hidden group-hover:block hover:block">
+              <div className="bg-bg-primary border border-border-custom p-4 shadow-2xl rounded-none">
+                <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-2">Select Duration</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-bg-secondary border border-border-custom p-2 rounded-none">
+                    <span className="block text-[9px] font-bold text-text-secondary uppercase tracking-wider">From</span>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      onClick={(e: any) => e.target.showPicker?.()}
+                      className="w-full bg-transparent text-xs text-text-primary outline-none mt-0.5 cursor-pointer text-left"
+                    />
+                  </div>
+                  <div className="bg-bg-secondary border border-border-custom p-2 rounded-none">
+                    <span className="block text-[9px] font-bold text-text-secondary uppercase tracking-wider">To</span>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      onClick={(e: any) => e.target.showPicker?.()}
+                      className="w-full bg-transparent text-xs text-text-primary outline-none mt-0.5 cursor-pointer text-left"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -99,11 +141,12 @@ export default function FindToursPage() {
           </div>
         </div>
       </form>
+      </div>
 
       {/* Main Listings view Grid */}
-      <section className="space-y-6">
+      <section className="w-full mx-auto px-8 lg:px-16 space-y-6">
         <div className="flex items-center justify-between border-b border-border-custom pb-4">
-          <h3 className="text-xl font-bold text-text-primary tracking-tight">Active Tour Packages</h3>
+          <h3 className="text-xl font-semibold text-text-primary tracking-wide">Active Tour Packages</h3>
           <div className="text-xs font-semibold text-text-secondary bg-bg-secondary border border-border-custom px-3 py-1.5 rounded-none">
             {packagesList.length} Packages Found
           </div>
@@ -111,13 +154,9 @@ export default function FindToursPage() {
 
         {/* Loading / Error States */}
         {isLoading && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-12">
-            {[1, 2, 3].map((n) => (
-              <div key={n} className="border border-border-custom p-4 space-y-4 animate-pulse bg-bg-primary">
-                <div className="h-48 bg-bg-secondary w-full animate-pulse"></div>
-                <div className="h-4 bg-bg-secondary w-2/3 animate-pulse"></div>
-                <div className="h-4 bg-bg-secondary w-1/2 animate-pulse"></div>
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-12">
+            {[1, 2, 3, 4].map((n) => (
+              <div key={n} className="h-[480px] border border-border-custom animate-pulse bg-bg-primary w-full"></div>
             ))}
           </div>
         )}
@@ -135,119 +174,69 @@ export default function FindToursPage() {
         {!isLoading && !error && packagesList.length === 0 && (
           <div className="text-center py-16 border border-dashed border-border-custom bg-bg-primary max-w-md mx-auto rounded-none">
             <Compass className="h-12 w-12 text-text-light mx-auto mb-4" />
-            <h4 className="text-lg font-bold text-text-primary">No Packages Available</h4>
+            <h4 className="text-lg font-semibold text-text-primary">No Packages Available</h4>
             <p className="text-sm text-text-secondary mt-1">Try clearing your filters to see more results.</p>
           </div>
         )}
 
         {/* Packages Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {packagesList.map((pkg: any) => {
-            const hasStay = !!pkg.inclusions?.stayType;
-            const hasMeals = !!pkg.inclusions?.mealPlan;
-            const hasTransport = !!pkg.inclusions?.transport;
-
             return (
-              <div
+              <Link
                 key={pkg.id}
-                className="bg-bg-primary border border-border-custom flex flex-col justify-between transition-all duration-300 hover:shadow-lg rounded-none group"
+                href={`/tours/${pkg.id}`}
+                className="relative w-full h-[480px] bg-bg-dark overflow-hidden block border border-border-custom group cursor-pointer"
               >
-                {/* Package Head Image Layer */}
-                <div className="relative h-48 w-full bg-bg-secondary overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={(pkg.inclusions as any)?.coverImage || "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=600&auto=format&fit=crop&q=80"}
-                    alt={pkg.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  
-                  {/* Destination Tag */}
-                  <span className="absolute top-3 left-3 z-20 bg-bg-primary border border-border-custom text-text-primary px-3 py-1 text-xs font-bold rounded-none">
-                    {pkg.destination}
+                <img
+                  src={(pkg.inclusions as any)?.coverImage || "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=600&auto=format&fit=crop&q=80"}
+                  alt={pkg.title}
+                  className="w-full h-full object-cover transition-transform duration-500 "
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10 z-10 transition-opacity duration-300 group-hover:from-black/95"></div>
+
+                {pkg.organizer?.isVerified && (
+                  <span className="absolute top-3 right-3 z-20 bg-theme-secondary text-white px-2.5 py-1 text-[10px] font-bold flex items-center space-x-1 rounded-none">
+                    <ShieldCheck className="h-3 w-3" />
+                    <span>Verified Host</span>
                   </span>
+                )}
 
-                  {/* Verified badge */}
-                  {pkg.organizer?.isVerified && (
-                    <span className="absolute top-3 right-3 z-20 bg-theme-secondary text-white px-2.5 py-1 text-[10px] font-bold flex items-center space-x-1 rounded-none">
-                      <ShieldCheck className="h-3 w-3" />
-                      <span>Verified Host</span>
-                    </span>
-                  )}
-
-                  {/* Seat count banner */}
-                  <div className="absolute bottom-3 left-3 right-3 z-20 flex items-center justify-between text-xs text-white font-bold">
-                    <span className="bg-bg-dark/60 px-2 py-0.5 border border-gray-700/60 rounded-none">
-                      Departs: {new Date(pkg.startDate).toLocaleDateString()}
-                    </span>
-                    <span className="bg-theme-accent text-bg-dark px-2 py-0.5 rounded-none">
-                      {pkg.availableSeats} Seats Left
-                    </span>
-                  </div>
-                </div>
-
-                {/* Card Body */}
-                <div className="p-5 flex-grow space-y-4">
-                  <h4 className="text-lg font-bold text-text-primary group-hover:text-theme-primary transition-colors leading-tight line-clamp-2">
-                    {pkg.title}
+                <div className="absolute bottom-0 left-0 right-0 p-4 pb-2 z-20 space-y-2">
+                  <h4 className="text-base font-semibold text-white leading-tight line-clamp-2 flex items-start gap-1">
+                    <MapPin className="h-4 w-4 text-theme-accent shrink-0 mt-0.5" />
+                    <span>{pkg.title}</span>
                   </h4>
-
-                  {/* Inclusions checklist icons bar */}
-                  <div className="flex items-center space-x-3 pt-1 border-y border-border-custom py-2.5 text-xs text-text-secondary">
-                    {hasTransport && (
-                      <span className="flex items-center space-x-1">
-                        <Bus className="h-3.5 w-3.5 text-theme-primary" />
-                        <span>Transit</span>
-                      </span>
-                    )}
-                    {hasStay && (
-                      <span className="flex items-center space-x-1">
-                        <Hotel className="h-3.5 w-3.5 text-theme-primary" />
-                        <span>Stay</span>
-                      </span>
-                    )}
-                    {hasMeals && (
-                      <span className="flex items-center space-x-1">
-                        <UtensilsCrossed className="h-3.5 w-3.5 text-theme-primary" />
-                        <span>Meals</span>
-                      </span>
-                    )}
+                  <div className="flex items-center justify-between text-[11px] text-gray-300 font-semibold">
+                    <span>Departs: {new Date(pkg.startDate).toLocaleDateString()}</span>
+                    <span className="text-theme-accent">{pkg.availableSeats} Seats Left</span>
                   </div>
-
-                  <p className="text-xs text-text-light">
-                    Organizer Agency: <span className="font-bold text-text-secondary">{pkg.organizer?.fullName}</span>
-                  </p>
-                </div>
-
-                {/* Card Footer pricing coordinates */}
-                <div className="p-5 pt-0 border-t border-border-custom bg-bg-secondary/40 flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] text-text-light font-bold">Seat Lock Fee</p>
-                    <p className="text-base font-extrabold text-theme-secondary">BDT {pkg.minimumSeatLockFee}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-text-light font-bold text-right">Full price</p>
-                    <p className="text-sm font-bold text-text-secondary text-right">BDT {pkg.totalPackagePrice}</p>
+                  <div className="max-h-0 opacity-0 overflow-hidden group-hover:max-h-20 group-hover:opacity-100 transition-all duration-300 ease-in-out border-t border-gray-700/80 pt-3 mt-1 flex items-center justify-between">
+                    <div>
+                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Full price</p>
+                      <p className="text-sm font-extrabold text-theme-accent">BDT {pkg.totalPackagePrice}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Duration</p>
+                      <p className="text-xs font-bold text-white text-right mt-0.5">
+                        {(() => {
+                          const start = new Date(pkg.startDate);
+                          const end = new Date(pkg.endDate);
+                          const days = Math.max(1, Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+                          const nights = days - 1;
+                          return nights > 0 
+                            ? `${days} Days - ${nights} Night${nights > 1 ? 's' : ''}`
+                            : `${days} Day${days > 1 ? 's' : ''}`;
+                        })()}
+                      </p>
+                    </div>
                   </div>
                 </div>
-
-                {/* Book Link Button */}
-                <div className="p-5 pt-0">
-                  <Link
-                    href={`/tours/${pkg.id}`}
-                    className="block text-center w-full bg-btn-primary text-btn-text-primary font-bold py-2.5 text-xs hover:bg-opacity-90 transition rounded-none"
-                  >
-                    View Details & Book
-                  </Link>
-                </div>
-
-              </div>
+              </Link>
             );
           })}
         </div>
-
       </section>
-
     </div>
   );
 }

@@ -52,7 +52,7 @@ export default function HotelDetailsPage() {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center max-w-md mx-auto text-center px-4 space-y-4">
         <ShieldCheck className="h-12 w-12 text-red-500" />
-        <h3 className="text-xl font-bold text-text-primary">Hotel Not Found</h3>
+        <h3 className="text-xl font-semibold text-text-primary">Hotel Not Found</h3>
         <p className="text-sm text-text-secondary">
           The requested hotel listing or inventory could not be loaded.
         </p>
@@ -66,7 +66,7 @@ export default function HotelDetailsPage() {
   const isTourOrganizer = user?.currentRole === "tour_organizer" || user?.currentRole === "admin";
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 py-10 space-y-8">
+    <div className="w-full mx-auto px-8 lg:px-16 py-10 space-y-8">
       
       {/* Back to Hotels link */}
       <Link href="/hotels" className="inline-flex items-center space-x-2 text-xs font-bold text-text-light hover:text-text-secondary">
@@ -98,7 +98,7 @@ export default function HotelDetailsPage() {
           
           {/* Main Title Section */}
           <div className="space-y-3">
-            <h1 className="text-3xl font-extrabold text-text-primary tracking-tight">{hotel.name}</h1>
+            <h1 className="text-3xl font-semibold text-text-primary tracking-wide">{hotel.name}</h1>
             <p className="text-sm text-text-light flex items-center space-x-1">
               <MapPin className="h-4 w-4 text-theme-primary shrink-0" />
               <span>{hotel.address}</span>
@@ -107,7 +107,7 @@ export default function HotelDetailsPage() {
 
           {/* Description */}
           <div className="border-t border-border-custom pt-6 space-y-3">
-            <h3 className="text-lg font-bold text-text-primary">About the Hotel</h3>
+            <h3 className="text-lg font-semibold text-text-primary">About the Hotel</h3>
             <p className="text-sm text-text-secondary leading-relaxed">
               {hotel.description || "Welcome to our premium hotel listing, offering guests comfortable accommodations, professional hospitality services, and a perfect central base to enjoy local tourism, sightseeing, and relaxation."}
             </p>
@@ -116,7 +116,7 @@ export default function HotelDetailsPage() {
           {/* Amenities checklist */}
           {hotel.amenities && hotel.amenities.length > 0 && (
             <div className="border-t border-border-custom pt-6 space-y-4">
-              <h3 className="text-lg font-bold text-text-primary">Property Amenities</h3>
+              <h3 className="text-lg font-semibold text-text-primary">Property Amenities</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 {hotel.amenities.map((amt: string, idx: number) => (
                   <div key={idx} className="flex items-center space-x-2 text-xs text-text-secondary font-semibold">
@@ -131,7 +131,7 @@ export default function HotelDetailsPage() {
           {/* Hotel Gallery */}
           {hotel.photos && hotel.photos.length > 1 && (
             <div className="border-t border-border-custom pt-6 space-y-4">
-              <h3 className="text-lg font-bold text-text-primary">Hotel Gallery</h3>
+              <h3 className="text-lg font-semibold text-text-primary">Hotel Gallery</h3>
               <div className="flex flex-wrap gap-4">
                 {hotel.photos.slice(1).map((photoUrl: string, idx: number) => (
                   <div
@@ -153,7 +153,7 @@ export default function HotelDetailsPage() {
 
           {/* Rooms Inventory */}
           <div className="border-t border-border-custom pt-6 space-y-6">
-            <h3 className="text-lg font-bold text-text-primary">Available Room Options</h3>
+            <h3 className="text-lg font-semibold text-text-primary">Available Room Options</h3>
             <div className="space-y-4">
               {(!hotel.rooms || hotel.rooms.length === 0) ? (
                 <p className="text-sm text-text-light">No room rates currently configured. Check back soon.</p>
@@ -166,7 +166,7 @@ export default function HotelDetailsPage() {
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
                         <Bed className="h-5 w-5 text-theme-primary" />
-                        <h4 className="font-bold text-text-primary text-base">{room.type}</h4>
+                        <h4 className="font-semibold text-text-primary text-base">{room.type}</h4>
                       </div>
                       
                       {/* Room Amenities */}
@@ -222,7 +222,7 @@ export default function HotelDetailsPage() {
         {/* Right Side: Quick Sidebar widgets */}
         <div className="space-y-6">
           <div className="bg-bg-secondary border border-border-custom p-6 space-y-4 rounded-none">
-            <h4 className="font-bold text-text-primary text-sm uppercase tracking-wider flex items-center space-x-1.5">
+            <h4 className="font-semibold text-text-primary text-sm uppercase tracking-wider flex items-center space-x-1.5">
               <Info className="h-4 w-4 text-theme-primary" />
               <span>Stay Policies</span>
             </h4>
@@ -247,7 +247,7 @@ export default function HotelDetailsPage() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-bg-primary border border-border-custom max-w-md w-full p-6 space-y-6 shadow-2xl rounded-none">
             <div>
-              <h3 className="text-xl font-bold text-text-primary">Confirm Simulated Booking</h3>
+              <h3 className="text-xl font-semibold text-text-primary">Confirm Simulated Booking</h3>
               <p className="text-xs text-text-light mt-1">Simulate reservation lock at {hotel.name}</p>
             </div>
 
@@ -300,7 +300,7 @@ export default function HotelDetailsPage() {
             <img
               src={fullScreenImage}
               alt="Full screen gallery view"
-              className="max-w-full max-h-full object-contain shadow-2xl"
+              className="max-h-full object-contain shadow-2xl"
             />
             <button
               onClick={() => setFullScreenImage(null)}

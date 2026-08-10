@@ -58,7 +58,7 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center max-w-md mx-auto text-center px-4 space-y-4">
         <AlertTriangle className="h-12 w-12 text-red-500" />
-        <h3 className="text-xl font-bold text-text-primary">Checkout Error</h3>
+        <h3 className="text-xl font-semibold text-text-primary">Checkout Error</h3>
         <p className="text-sm text-text-secondary">
           Failed to load checkout parameters. Please go back to the package detail screen and retry booking.
         </p>
@@ -122,11 +122,11 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 py-12 min-h-[80vh]">
+    <div className="w-full mx-auto px-8 lg:px-16 py-12 min-h-[80vh]">
       
       {/* Title */}
       <div className="mb-10 text-center max-w-xl mx-auto">
-        <h1 className="text-3xl font-bold text-text-primary tracking-tight">Checkout Secure Gateway</h1>
+        <h1 className="text-3xl font-semibold text-text-primary tracking-wide">Checkout Secure Gateway</h1>
         <p className="mt-2 text-sm text-text-secondary">
           Lock in your booking seats deposit.
         </p>
@@ -139,7 +139,7 @@ export default function CheckoutPage() {
           
           {checkoutStep === "summary" && (
             <div className="border border-border-custom bg-bg-primary p-6 space-y-6 rounded-none">
-              <h3 className="text-base font-bold text-text-primary tracking-wide border-b border-border-custom pb-2">
+              <h3 className="text-base font-semibold text-text-primary tracking-wide border-b border-border-custom pb-2">
                 Select Payment Method
               </h3>
               
@@ -172,7 +172,7 @@ export default function CheckoutPage() {
               </div>
               
               <p className="text-[10px] text-text-light text-center">
-                Transactions are secured under the orbitX Travel checkout encryption guidelines.
+                Transactions are secured under the OrbitX Travel checkout encryption guidelines.
               </p>
             </div>
           )}
@@ -251,7 +251,7 @@ export default function CheckoutPage() {
             <div className="border border-border-custom bg-bg-primary p-6 text-center space-y-6 rounded-none animate-in fade-in zoom-in-95 duration-300">
               
               <CheckCircle2 className="h-16 w-16 text-theme-secondary mx-auto" />
-              <h2 className="text-2xl font-bold text-text-primary">Payment Complete!</h2>
+              <h2 className="text-2xl font-semibold text-text-primary">Payment Complete!</h2>
               <p className="text-sm text-text-secondary leading-relaxed max-w-md mx-auto">
                 Your deposit lock fee of <span className="font-bold text-theme-secondary">BDT {completedBooking.paidAmount}</span> has been processed. The remaining balance will be settled prior to departure.
               </p>
@@ -299,7 +299,7 @@ export default function CheckoutPage() {
         {/* Right Side: Billing summary sidebar (Col 2) */}
         <div className="md:col-span-2">
           <div className="border border-border-custom bg-bg-secondary/40 p-6 space-y-5 rounded-none">
-            <h4 className="text-xs font-bold text-text-primary border-b border-border-custom pb-2">
+            <h4 className="text-xs font-semibold text-text-primary border-b border-border-custom pb-2">
               Booking Summary
             </h4>
             

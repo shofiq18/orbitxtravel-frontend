@@ -143,20 +143,20 @@ export default function HotelRoomsPage() {
 
   if (!activeHotel) {
     return (
-      <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 py-10 min-h-[80vh] text-center space-y-4 bg-bg-primary">
-        <h1 className="text-xl font-bold text-text-primary">No Property Linked</h1>
+      <div className="w-full mx-auto px-8 lg:px-16 py-10 min-h-[80vh] text-center space-y-4 bg-bg-primary">
+        <h1 className="text-xl font-semibold text-text-primary">No Property Linked</h1>
         <p className="text-sm text-text-secondary">Please complete your Hotel Property list setup first on the Overview tab.</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 py-10 min-h-[80vh] space-y-8">
+    <div className="w-full mx-auto px-8 lg:px-16 py-10 min-h-[80vh] space-y-8">
       
       {/* Title */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-border-custom pb-5 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary tracking-tight">Room Inventory Management</h1>
+          <h1 className="text-2xl font-semibold text-text-primary tracking-wide">Room Inventory Management</h1>
           <p className="text-sm text-text-light mt-1">Configure individual suite types, rates, and B2B pricing locks.</p>
         </div>
         
@@ -170,7 +170,7 @@ export default function HotelRoomsPage() {
         
         {/* Form */}
         <form onSubmit={handleCreateRoom} className="border border-border-custom bg-bg-primary p-6 space-y-4 rounded-none h-fit">
-          <h3 className="text-base font-bold text-text-primary tracking-wide border-b border-border-custom pb-2">
+          <h3 className="text-base font-semibold text-text-primary tracking-wide border-b border-border-custom pb-2">
             List a New Room Type
           </h3>
 
@@ -304,7 +304,7 @@ export default function HotelRoomsPage() {
 
         {/* Existing Rooms list (Col 2) */}
         <div className="lg:col-span-2 space-y-4">
-          <h3 className="text-base font-bold text-text-primary tracking-wide">Existing Room Types</h3>
+          <h3 className="text-base font-semibold text-text-primary tracking-wide">Existing Room Types</h3>
           
           {(!activeHotel.rooms || activeHotel.rooms.length === 0) ? (
             <div className="text-center py-8 border border-dashed border-border-custom bg-bg-primary rounded-none">
@@ -316,7 +316,7 @@ export default function HotelRoomsPage() {
               {activeHotel.rooms.map((rm: any) => (
                 <div key={rm.id} className="border border-border-custom bg-bg-primary p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-none">
                   <div className="space-y-1">
-                    <h4 className="font-bold text-text-primary text-sm">{rm.type}</h4>
+                    <h4 className="font-semibold text-text-primary text-sm">{rm.type}</h4>
                     <p className="text-[10px] text-text-light font-bold">ID: <span className="font-mono">{rm.id}</span></p>
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {rm.amenities.map((am: string, i: number) => (

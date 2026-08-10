@@ -222,10 +222,10 @@ export default function TourConstructorPage() {
   };
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 py-10 min-h-[80vh] space-y-8">
+    <div className="w-full mx-auto px-8 lg:px-16 py-10 min-h-[80vh] space-y-8">
       {/* Page Title */}
       <div className="border-b border-border-custom pb-5">
-        <h1 className="text-2xl font-bold text-text-primary tracking-tight">Tour Package Constructor</h1>
+        <h1 className="text-2xl font-semibold text-text-primary tracking-wide">Tour Package Constructor</h1>
         <p className="text-sm text-text-light mt-1">Configure seat pricing, include transport/meal layouts, and launch custom travel tours.</p>
       </div>
 
@@ -233,7 +233,7 @@ export default function TourConstructorPage() {
         
         {/* Form Column (Col 2) */}
         <form onSubmit={handlePublishPackage} className="lg:col-span-2 border border-border-custom bg-bg-primary p-6 md:p-8 space-y-6 rounded-none">
-          <h3 className="text-lg font-bold text-text-primary border-b border-border-custom pb-2">
+          <h3 className="text-lg font-semibold text-text-primary border-b border-border-custom pb-2">
             Configure Tour Credentials
           </h3>
 
@@ -320,7 +320,7 @@ export default function TourConstructorPage() {
             </div>
           </div>
 
-          <h3 className="text-sm font-bold text-text-primary border-b border-border-custom pt-4 pb-1">
+          <h3 className="text-sm font-semibold text-text-primary border-b border-border-custom pt-4 pb-1">
             Inclusions & Highlights Checklist
           </h3>
 
@@ -370,7 +370,7 @@ export default function TourConstructorPage() {
           {/* Itinerary Constructor Section */}
           <div className="border-t border-border-custom pt-6 space-y-4">
             <div className="flex items-center justify-between border-b border-border-custom pb-2">
-              <h4 className="text-sm font-bold text-text-primary uppercase tracking-wider">Tour Itinerary Planner</h4>
+              <h4 className="text-sm font-semibold text-text-primary uppercase tracking-wider">Tour Itinerary Planner</h4>
               <button
                 type="button"
                 onClick={handleAddItineraryDay}
@@ -528,7 +528,7 @@ export default function TourConstructorPage() {
 
         {/* Hold details Sidebar Column (Col 1) */}
         <div className="border border-border-custom bg-bg-secondary/40 p-6 space-y-6 rounded-none h-fit">
-          <h4 className="text-xs font-bold text-text-primary border-b border-border-custom pb-2">
+          <h4 className="text-xs font-semibold text-text-primary border-b border-border-custom pb-2">
             Active B2B Room Holds
           </h4>
           

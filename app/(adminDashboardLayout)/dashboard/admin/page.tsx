@@ -52,15 +52,15 @@ export default function AdminOnboardingPage() {
   };
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 py-10 min-h-[80vh] space-y-8">
+    <div className="w-full mx-auto px-8 lg:px-16 py-10 min-h-[80vh] space-y-8">
       {/* Page Header */}
       <div className="border-b border-border-custom pb-5">
-        <h1 className="text-2xl font-bold text-text-primary tracking-tight">Vendor Onboarding Queue</h1>
+        <h1 className="text-2xl font-semibold text-text-primary tracking-wide">Vendor Onboarding Queue</h1>
         <p className="text-sm text-text-light mt-1">Review vendor accounts and approve or reject onboarding requests.</p>
       </div>
 
       <div className="border border-border-custom bg-bg-primary p-6 space-y-6 rounded-none">
-        <h3 className="text-base font-bold text-text-primary tracking-wide border-b border-border-custom pb-2">
+        <h3 className="text-base font-semibold text-text-primary tracking-wide border-b border-border-custom pb-2">
           Pending Host Verification Applications
         </h3>
 

@@ -61,7 +61,7 @@ export default function TourDetailsPage() {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center max-w-md mx-auto text-center px-4 space-y-4">
         <ShieldCheck className="h-12 w-12 text-red-500" />
-        <h3 className="text-xl font-bold text-text-primary">Tour Not Found</h3>
+        <h3 className="text-xl font-semibold text-text-primary">Tour Not Found</h3>
         <p className="text-sm text-text-secondary">
           The requested package details could not be found or have been removed.
         </p>
@@ -78,7 +78,7 @@ export default function TourDetailsPage() {
   const totalDueLater = totalFullPrice - totalDueNow;
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 py-10 space-y-8">
+    <div className="w-full mx-auto px-8 lg:px-16 py-10 space-y-8">
       
       {/* Back Link */}
       <Link href="/" className="inline-flex items-center space-x-2 text-xs font-bold text-text-light hover:text-text-secondary">
@@ -118,7 +118,7 @@ export default function TourDetailsPage() {
               )}
             </div>
             
-            <h1 className="text-3xl md:text-4xl font-bold text-text-primary tracking-tight leading-tight">
+            <h1 className="text-3xl md:text-4xl font-semibold text-text-primary tracking-wide leading-tight">
               {pkg.title}
             </h1>
 
@@ -137,7 +137,7 @@ export default function TourDetailsPage() {
 
           {/* Package Inclusions Checklist Cards */}
           <div className="space-y-4">
-            <h3 className="text-xl font-bold text-text-primary tracking-wide">Included in this Tour</h3>
+            <h3 className="text-xl font-semibold text-text-primary tracking-wide">Included in this Tour</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               
               {/* Transport */}
@@ -173,7 +173,7 @@ export default function TourDetailsPage() {
           {/* Custom itinerary checklist activities */}
           {pkg.inclusions?.customs && pkg.inclusions.customs.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-xl font-bold text-text-primary tracking-wide">Highlights & Activities</h3>
+              <h3 className="text-xl font-semibold text-text-primary tracking-wide">Highlights & Activities</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {pkg.inclusions.customs.map((activity: string, idx: number) => (
                   <div key={idx} className="flex items-start space-x-3 p-3 bg-bg-secondary border border-border-custom rounded-none">
@@ -189,7 +189,7 @@ export default function TourDetailsPage() {
           {pkg.itinerary && pkg.itinerary.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-border-custom pb-2">
-                <h3 className="text-xl font-bold text-text-primary tracking-wide">Tour Itinerary</h3>
+                <h3 className="text-xl font-semibold text-text-primary tracking-wide">Tour Itinerary</h3>
                 <div className="flex items-center space-x-2">
                   <button
                     type="button"
@@ -236,7 +236,7 @@ export default function TourDetailsPage() {
  
                       {/* Day Title Overlay */}
                       <div className="absolute bottom-3 left-3 right-3 z-20">
-                        <h4 className="text-sm font-extrabold text-white leading-snug">
+                        <h4 className="text-sm font-semibold text-white leading-snug">
                           {item.title}
                         </h4>
                       </div>
@@ -255,7 +255,7 @@ export default function TourDetailsPage() {
           {/* Tour Gallery */}
           {((pkg.inclusions as any)?.photos) && ((pkg.inclusions as any).photos.length > 0) && (
             <div className="space-y-4">
-              <h3 className="text-xl font-bold text-text-primary tracking-wide">Tour Gallery</h3>
+              <h3 className="text-xl font-semibold text-text-primary tracking-wide">Tour Gallery</h3>
               <div className="flex flex-wrap gap-4">
                 {(pkg.inclusions as any).photos.map((photoUrl: string, idx: number) => (
                   <div
@@ -277,7 +277,7 @@ export default function TourDetailsPage() {
 
           {/* Tour Host Profile section */}
           <div className="p-6 border border-border-custom bg-bg-secondary/40 space-y-4 rounded-none">
-            <h4 className="text-sm font-bold text-text-primary">Registered Tour Host Organizer</h4>
+            <h4 className="text-sm font-semibold text-text-primary">Registered Tour Host Organizer</h4>
             <div className="flex items-start space-x-4">
               <div className="bg-theme-primary text-text-white h-12 w-12 flex items-center justify-center text-xl font-bold rounded-none shrink-0">
                 {pkg.organizer?.fullName?.substring(0, 2) || "AG"}
@@ -399,7 +399,7 @@ export default function TourDetailsPage() {
             <img
               src={fullScreenImage}
               alt="Full screen gallery view"
-              className="max-w-full max-h-full object-contain shadow-2xl"
+              className="max-h-full object-contain shadow-2xl"
             />
             <button
               onClick={() => setFullScreenImage(null)}

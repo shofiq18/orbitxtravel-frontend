@@ -167,12 +167,12 @@ export default function HotelPropertyPage() {
   }
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 py-10 min-h-[80vh] space-y-8">
+    <div className="w-full mx-auto px-8 lg:px-16 py-10 min-h-[80vh] space-y-8">
       
       {/* Title */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-border-custom pb-5 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary tracking-tight">Property Overview</h1>
+          <h1 className="text-2xl font-semibold text-text-primary tracking-wide">Property Overview</h1>
           <p className="text-sm text-text-light mt-1">Configure property settings and features linked to your profile.</p>
         </div>
         
@@ -188,7 +188,7 @@ export default function HotelPropertyPage() {
         <div className="max-w-2xl mx-auto border border-border-custom bg-bg-primary p-6 md:p-10 rounded-none space-y-6">
           <div className="text-center space-y-2">
             <Home className="h-10 w-10 text-theme-primary mx-auto" />
-            <h3 className="text-xl font-bold text-text-primary">List Your Hotel Property</h3>
+            <h3 className="text-xl font-semibold text-text-primary">List Your Hotel Property</h3>
             <p className="text-sm text-text-secondary">
               You haven&#39;t linked a hotel property to your host profile yet. Let&#39;s start by setting up your property coordinates.
             </p>
@@ -335,7 +335,7 @@ export default function HotelPropertyPage() {
         </div>
       ) : isEditingPolicies ? (
         <form onSubmit={handleUpdatePolicies} className="max-w-2xl border border-border-custom bg-bg-primary p-6 space-y-6 rounded-none">
-          <h3 className="text-lg font-bold text-text-primary border-b border-border-custom pb-2">
+          <h3 className="text-lg font-semibold text-text-primary border-b border-border-custom pb-2">
             Update Property Policies
           </h3>
           <div className="grid grid-cols-2 gap-4">
@@ -381,7 +381,7 @@ export default function HotelPropertyPage() {
       ) : (
         <div className="border border-border-custom bg-bg-primary p-6 space-y-6 rounded-none">
           <div className="flex items-center justify-between border-b border-border-custom pb-2">
-            <h3 className="text-lg font-bold text-text-primary">
+            <h3 className="text-lg font-semibold text-text-primary">
               Hotel Property Coordinates
             </h3>
             <button

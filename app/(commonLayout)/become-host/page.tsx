@@ -123,13 +123,13 @@ export default function BecomeHostPage() {
   };
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 py-12 min-h-[80vh]">
+    <div className="w-full mx-auto px-8 lg:px-16 py-12 min-h-[80vh]">
       
       {/* Page Title Header */}
       <div className="mb-10 text-center max-w-2xl mx-auto">
-        <h1 className="text-3xl md:text-4xl font-bold text-text-primary tracking-tight">Become a Host</h1>
+        <h1 className="text-3xl md:text-4xl font-semibold text-text-primary tracking-wide">Become a Host</h1>
         <p className="mt-3 text-text-secondary text-base">
-          Join orbitX Travel to start listing your hotel rooms or constructing tour packages for travelers.
+          Join OrbitX Travel to start listing your hotel rooms or constructing tour packages for travelers.
         </p>
       </div>
 
@@ -138,7 +138,7 @@ export default function BecomeHostPage() {
           
           {/* Step Section 1: Choose Role Type */}
           <div className="space-y-4">
-            <h3 className="text-lg font-bold text-text-primary flex items-center space-x-2 border-b border-border-custom pb-2">
+            <h3 className="text-lg font-semibold text-text-primary flex items-center space-x-2 border-b border-border-custom pb-2">
               <span className="bg-theme-primary text-text-white w-6 h-6 flex items-center justify-center text-xs font-bold rounded-none">1</span>
               <span>Select Hosting Role Type</span>
             </h3>
@@ -151,7 +151,7 @@ export default function BecomeHostPage() {
               >
                 <Home className={`h-8 w-8 shrink-0 ${vendorType === "hotel_owner" ? "text-theme-primary" : "text-text-light"}`} />
                 <div>
-                  <h4 className="font-bold text-text-primary">Hotel Property Owner</h4>
+                  <h4 className="font-semibold text-text-primary">Hotel Property Owner</h4>
                   <p className="text-xs text-text-secondary mt-1">
                     List properties, manage rooms inventory, and configure public B2C rates alongside locked partner B2B rates.
                   </p>
@@ -165,7 +165,7 @@ export default function BecomeHostPage() {
               >
                 <Compass className={`h-8 w-8 shrink-0 ${vendorType === "tour_organizer" ? "text-theme-primary" : "text-text-light"}`} />
                 <div>
-                  <h4 className="font-bold text-text-primary">Tour Package Organizer</h4>
+                  <h4 className="font-semibold text-text-primary">Tour Package Organizer</h4>
                   <p className="text-xs text-text-secondary mt-1">
                     Design custom itineraries, lock B2B hotel accommodations, and setup seat locks/deposits checks.
                   </p>
@@ -176,7 +176,7 @@ export default function BecomeHostPage() {
 
           {/* Step Section 2: Business details */}
           <div className="space-y-4 pt-4">
-            <h3 className="text-lg font-bold text-text-primary flex items-center space-x-2 border-b border-border-custom pb-2">
+            <h3 className="text-lg font-semibold text-text-primary flex items-center space-x-2 border-b border-border-custom pb-2">
               <span className="bg-theme-primary text-text-white w-6 h-6 flex items-center justify-center text-xs font-bold rounded-none">2</span>
               <span>Business Profile Information</span>
             </h3>
@@ -273,7 +273,7 @@ export default function BecomeHostPage() {
 
           {/* Step Section 3: Payout Details */}
           <div className="space-y-4 pt-4">
-            <h3 className="text-lg font-bold text-text-primary flex items-center space-x-2 border-b border-border-custom pb-2">
+            <h3 className="text-lg font-semibold text-text-primary flex items-center space-x-2 border-b border-border-custom pb-2">
               <span className="bg-theme-primary text-text-white w-6 h-6 flex items-center justify-center text-xs font-bold rounded-none">3</span>
               <span>Settlement & Payout Coordinates</span>
             </h3>
@@ -357,7 +357,7 @@ export default function BecomeHostPage() {
       ) : (
         <div className="max-w-xl mx-auto bg-bg-primary border border-border-custom p-8 text-center space-y-6 rounded-none animate-in fade-in zoom-in-95 duration-200">
           <CheckCircle2 className="h-16 w-16 text-theme-secondary mx-auto" />
-          <h2 className="text-2xl font-bold text-text-primary">Application Submitted!</h2>
+          <h2 className="text-2xl font-semibold text-text-primary">Application Submitted!</h2>
           <p className="text-sm text-text-secondary leading-relaxed">
             Your application to become a <span className="font-bold text-theme-primary">{vendorType.replace("_", " ")}</span> has been successfully logged.
           </p>
@@ -366,7 +366,7 @@ export default function BecomeHostPage() {
               <Landmark className="h-3.5 w-3.5 text-theme-secondary" />
               <span>Next Verification Steps:</span>
             </p>
-            <p>1. The orbitX Travel Admin board will review your business license and trade coordinates.</p>
+            <p>1. The OrbitX Travel Admin board will review your business license and trade coordinates.</p>
             <p>2. Upon document validation approval, your hosting credentials will be switched on.</p>
             <p>3. You will receive an automated verification email notification to switch workspaces.</p>
           </div>

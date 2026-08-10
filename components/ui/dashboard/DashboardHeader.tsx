@@ -18,7 +18,7 @@ export function DashboardHeader() {
         <div className="flex items-center justify-between gap-4">
           {/* Left side - Can add breadcrumbs or title here */}
           <div className="flex-1">
-            <h1 className="text-xl sm:text-xl ml-8 font-bold text-gray-900">
+            <h1 className="text-xl sm:text-xl ml-8 font-semibold text-gray-900">
              {user?.data?.name || "Dashboard"}
             </h1>
           </div>

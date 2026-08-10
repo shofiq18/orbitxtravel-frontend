@@ -30,18 +30,18 @@ export default function AdminAlertsPage() {
   };
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 py-10 min-h-[80vh] space-y-8">
+    <div className="w-full mx-auto px-8 lg:px-16 py-10 min-h-[80vh] space-y-8">
       {/* Page Header */}
       <div className="border-b border-border-custom pb-5">
-        <h1 className="text-2xl font-bold text-text-primary tracking-tight">Automation Trigger</h1>
+        <h1 className="text-2xl font-semibold text-text-primary tracking-wide">Automation Trigger</h1>
         <p className="text-sm text-text-light mt-1">Manually dispatch pre-trip alerts SMS notifications to travelers.</p>
       </div>
 
       <div className="max-w-xl mx-auto border border-border-custom bg-bg-primary p-8 space-y-6 rounded-none text-center">
         <BellRing className="h-12 w-12 text-theme-primary mx-auto" />
-        <h3 className="text-xl font-bold text-text-primary">Departure Alerts Dispatch Panel</h3>
+        <h3 className="text-xl font-semibold text-text-primary">Departure Alerts Dispatch Panel</h3>
         <p className="text-sm text-text-secondary leading-relaxed">
-          Scan orbitX Travel bookings and dispatch automated pre-trip SMS departure reminders directly to travelers whose tours depart in exactly 24 hours.
+          Scan OrbitX Travel bookings and dispatch automated pre-trip SMS departure reminders directly to travelers whose tours depart in exactly 24 hours.
         </p>
 
         <div className="p-4 bg-bg-secondary border border-border-custom text-xs text-text-secondary text-left space-y-2 rounded-none">

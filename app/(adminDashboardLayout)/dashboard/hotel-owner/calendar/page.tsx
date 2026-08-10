@@ -95,20 +95,20 @@ export default function HotelCalendarPage() {
 
   if (!activeHotel) {
     return (
-      <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 py-10 min-h-[80vh] text-center space-y-4 bg-bg-primary">
-        <h1 className="text-xl font-bold text-text-primary">No Property Linked</h1>
+      <div className="w-full mx-auto px-8 lg:px-16 py-10 min-h-[80vh] text-center space-y-4 bg-bg-primary">
+        <h1 className="text-xl font-semibold text-text-primary">No Property Linked</h1>
         <p className="text-sm text-text-secondary">Please complete your Hotel Property list setup first on the Overview tab.</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-4 md:px-6 py-10 min-h-[80vh] space-y-8">
+    <div className="w-full mx-auto px-8 lg:px-16 py-10 min-h-[80vh] space-y-8">
       
       {/* Title */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-border-custom pb-5 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary tracking-tight">Availability Calendar</h1>
+          <h1 className="text-2xl font-semibold text-text-primary tracking-wide">Availability Calendar</h1>
           <p className="text-sm text-text-light mt-1">Block room types from public searches for offline and maintenance purposes.</p>
         </div>
         
@@ -122,7 +122,7 @@ export default function HotelCalendarPage() {
         
         {/* Block Date Form */}
         <form onSubmit={handleBlockDates} className="border border-border-custom bg-bg-primary p-6 space-y-4 rounded-none h-fit">
-          <h3 className="text-base font-bold text-text-primary tracking-wide border-b border-border-custom pb-2">
+          <h3 className="text-base font-semibold text-text-primary tracking-wide border-b border-border-custom pb-2">
             Block Out Calendar Dates
           </h3>
 
@@ -178,7 +178,7 @@ export default function HotelCalendarPage() {
 
         {/* Locked Dates List */}
         <div className="border border-border-custom bg-bg-primary p-6 space-y-4 rounded-none h-fit">
-          <h3 className="text-base font-bold text-text-primary tracking-wide border-b border-border-custom pb-2">
+          <h3 className="text-base font-semibold text-text-primary tracking-wide border-b border-border-custom pb-2">
             Active Calendar Blocks
           </h3>
           

@@ -81,7 +81,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-inter), sans-serif;
+  --font-title: var(--font-recoleta), serif;
   --font-mono: var(--font-geist-mono);
   
   /* Bind custom color property variables */
@@ -146,4 +147,14 @@
   --radius-3xl: 0px;
   --radius-4xl: 0px;
   --radius: 0px;
+}
+
+body {
+  font-family: var(--font-inter), sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6, .font-title {
+  font-family: var(--font-recoleta), serif;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }

@@ -120,15 +120,15 @@ export default function SignUpForm() {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center p-4 md:p-6">
-      <div className="w-full max-w-md bg-bg-primary shadow-none p-6 sm:p-8 md:p-10 rounded-none">
+      <div className="w-full max-w-lg bg-bg-primary shadow-none p-6 sm:p-8 md:p-10 rounded-none">
         
         {/* Step 1: Registration Form */}
         {step === "register" && (
           <div>
-            <div className="mb-8 text-center">
-              <h1 className="text-3xl font-extrabold text-text-primary tracking-tight">Create Account</h1>
+            <div className="mb-8 text-left">
+              <h1 className="text-3xl font-semibold text-text-primary tracking-wide">Create Account</h1>
               <p className="mt-2 text-base text-text-secondary">
-                Register as a Traveler on orbitX Travel.
+                Register as a Traveler on OrbitX Travel.
               </p>
             </div>
 
@@ -229,9 +229,9 @@ export default function SignUpForm() {
         {/* Step 2: OTP Verification */}
         {step === "otp" && (
           <div>
-            <div className="mb-8 text-center">
-              <ShieldAlert className="h-14 w-14 text-theme-secondary mx-auto mb-3" />
-              <h1 className="text-3xl font-extrabold text-text-primary tracking-tight">Verify Email</h1>
+            <div className="mb-8 text-left">
+              <ShieldAlert className="h-14 w-14 text-theme-secondary mb-3" />
+              <h1 className="text-3xl font-semibold text-text-primary tracking-wide">Verify Email</h1>
               <p className="mt-2 text-base text-text-secondary">
                 We sent a 6-digit verification code to <span className="font-bold">{email}</span>.
               </p>
@@ -297,9 +297,9 @@ export default function SignUpForm() {
 
         {/* Step 3: Success Screen */}
         {step === "success" && (
-          <div className="text-center py-6">
-            <CheckCircle2 className="h-20 w-20 text-theme-secondary mx-auto mb-4" />
-            <h1 className="text-3xl font-extrabold text-text-primary tracking-tight">Verified!</h1>
+          <div className="text-left py-6">
+            <CheckCircle2 className="h-20 w-20 text-theme-secondary mb-4" />
+            <h1 className="text-3xl font-semibold text-text-primary tracking-wide">Verified!</h1>
             <p className="mt-2 text-base text-text-secondary">
               Your email verification was successful. You can now log in to access all traveling and hosting workspaces.
             </p>

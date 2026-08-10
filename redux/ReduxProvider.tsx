@@ -28,7 +28,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       return (
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">
+            <h2 className="text-2xl font-semibold text-red-600 mb-4">
               Something went wrong
             </h2>
             <button
