@@ -106,10 +106,9 @@ export default function Navbar() {
                 </Link>
               )}
 
-              {/* User Avatar Menu Dropdown */}
-              <div className="relative">
+              {/* User Avatar Menu Dropdown (Hover-Activated) */}
+              <div className="relative group">
                 <button
-                  onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
                   className="flex items-center space-x-2 border border-border-custom px-3 py-1.5 bg-bg-secondary hover:bg-opacity-80 transition-colors rounded-none cursor-pointer"
                 >
                   <User className="h-4 w-4 text-text-secondary" />
@@ -117,42 +116,31 @@ export default function Navbar() {
                   <ChevronDown className="h-3 w-3 text-text-secondary" />
                 </button>
 
-                {isProfileDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-bg-primary border border-border-custom shadow-xl py-2 z-50 rounded-none animate-in fade-in slide-in-from-top-2 duration-200">
+                {/* Hover Modal Bridge Wrapper */}
+                <div className="absolute right-0 top-full pt-2 z-50 hidden group-hover:block hover:block w-56">
+                  <div className="bg-bg-primary border border-border-custom shadow-xl py-2 rounded-none animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="px-4 py-2 border-b border-border-custom">
                       <p className="text-sm font-bold text-text-primary">{user.fullName}</p>
                       <p className="text-xs text-text-light truncate">{user.email}</p>
                     </div>
                     <div className="py-1">
                       {user.currentRole && ["admin", "hotel_owner", "tour_organizer"].includes(user.currentRole) ? (
-                        <>
-                          <Link
-                            href={
-                              user.currentRole === "hotel_owner"
-                                ? "/dashboard/hotel-owner"
-                                : user.currentRole === "tour_organizer"
-                                ? "/dashboard/tour-organizer"
-                                : "/dashboard/admin"
-                            }
-                            onClick={() => setIsProfileDropdownOpen(false)}
-                            className="flex items-center space-x-2 px-4 py-2 text-sm text-text-secondary hover:bg-bg-secondary transition-colors font-semibold"
-                          >
-                            <LayoutDashboard className="h-4.5 w-4.5 text-theme-primary" />
-                            <span>Dashboard</span>
-                          </Link>
-                          <Link
-                            href="/profile"
-                            onClick={() => setIsProfileDropdownOpen(false)}
-                            className="flex items-center space-x-2 px-4 py-2 text-sm text-text-secondary hover:bg-bg-secondary transition-colors"
-                          >
-                            <UserCheck className="h-4 w-4" />
-                            <span>My Profile</span>
-                          </Link>
-                        </>
+                        <Link
+                          href={
+                            user.currentRole === "hotel_owner"
+                              ? "/dashboard/hotel-owner"
+                              : user.currentRole === "tour_organizer"
+                              ? "/dashboard/tour-organizer"
+                              : "/dashboard/admin"
+                          }
+                          className="flex items-center space-x-2 px-4 py-2 text-sm text-text-secondary hover:bg-bg-secondary transition-colors font-semibold"
+                        >
+                          <LayoutDashboard className="h-4.5 w-4.5 text-theme-primary" />
+                          <span>Dashboard</span>
+                        </Link>
                       ) : (
                         <Link
-                          href="/profile"
-                          onClick={() => setIsProfileDropdownOpen(false)}
+                          href="/dashboard/profile"
                           className="flex items-center space-x-2 px-4 py-2 text-sm text-text-secondary hover:bg-bg-secondary transition-colors font-semibold"
                         >
                           <UserCheck className="h-4 w-4" />
@@ -197,7 +185,7 @@ export default function Navbar() {
                       </button>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
 
             </div>

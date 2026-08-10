@@ -5,7 +5,23 @@ import { useParams, useRouter } from "next/navigation";
 import { useGetPackageByIdQuery } from "@/redux/api/tour/tourApi";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
-import { Bus, Hotel, Utensils, ShieldCheck, Compass, Info, Loader2, ArrowLeft, ArrowRight, Check, Ticket, Clock } from "lucide-react";
+import { 
+  Bus, 
+  Hotel, 
+  Utensils, 
+  ShieldCheck, 
+  Compass, 
+  Info, 
+  Loader2, 
+  ArrowLeft, 
+  ArrowRight, 
+  Check, 
+  Ticket, 
+  Clock,
+  Share,
+  Heart,
+  Globe
+} from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 
@@ -77,61 +93,174 @@ export default function TourDetailsPage() {
   const totalFullPrice = seatsBooked * pkg.totalPackagePrice;
   const totalDueLater = totalFullPrice - totalDueNow;
 
+  // User actual photos arrays with empty placeholders fallback
+  const defaultImages = [
+    (pkg.inclusions as any)?.coverImage || "",
+    "",
+    "",
+    "",
+    "",
+  ];
+
   return (
-    <div className="w-full mx-auto px-8 lg:px-16 py-10 space-y-8">
+    <div className="w-full mx-auto px-8 lg:px-16 py-10 space-y-8 details-page-wrapper">
       
       {/* Back Link */}
-      <Link href="/" className="inline-flex items-center space-x-2 text-xs font-bold text-text-light hover:text-text-secondary">
-        <ArrowLeft className="h-4 w-4" />
-        <span>Back to Search</span>
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link href="/" className="inline-flex items-center space-x-2 text-xs font-bold text-text-light hover:text-text-secondary">
+          <ArrowLeft className="h-4 w-4" />
+          <span>Back to Search</span>
+        </Link>
+      </div>
 
-      {/* Cover Image banner */}
-      {((pkg.inclusions as any)?.coverImage) && (
-        <div className="w-full h-80 md:h-[450px] bg-bg-secondary border border-border-custom overflow-hidden relative rounded-none cursor-zoom-in">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={(pkg.inclusions as any).coverImage}
-            alt={pkg.title}
-            onClick={() => setFullScreenImage((pkg.inclusions as any).coverImage)}
-            className="w-full h-full object-cover hover:scale-[1.01] transition-transform duration-300"
-          />
+      {/* Top Title & Actions Bar */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border-custom pb-5 mt-2">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-3">
+            {pkg.destination?.toLowerCase() !== pkg.title?.toLowerCase() && (
+              <span className="bg-theme-primary text-white text-[10px] font-extrabold px-3 py-1 uppercase tracking-wider">
+                {pkg.destination}
+              </span>
+            )}
+            {pkg.organizer?.isVerified && (
+              <span className="bg-theme-secondary text-white text-[10px] font-extrabold px-3 py-1 flex items-center space-x-1 uppercase tracking-wider">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                <span>Verified Host</span>
+              </span>
+            )}
+          </div>
+          <h1 className="text-2xl md:text-3xl font-semibold text-text-primary tracking-wide leading-tight">{pkg.title}</h1>
         </div>
-      )}
+        <div className="flex items-center space-x-4 text-xs font-semibold text-text-secondary shrink-0">
+          <button 
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                navigator.clipboard.writeText(window.location.href);
+                toast.success("Link copied to clipboard!");
+              }
+            }}
+            className="flex items-center gap-1.5 hover:underline cursor-pointer py-2 px-3.5 bg-bg-secondary border border-border-custom hover:bg-opacity-80 transition"
+          >
+            <Share className="h-4 w-4 text-text-light" />
+            <span>Share</span>
+          </button>
+          <button 
+            onClick={() => toast.success("Tour package saved to favorites!")}
+            className="flex items-center gap-1.5 hover:underline cursor-pointer py-2 px-3.5 bg-bg-secondary border border-border-custom hover:bg-opacity-80 transition"
+          >
+            <Heart className="h-4 w-4 text-red-500" />
+            <span>Save</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Airbnb style 5-Photo Grid layout */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5 h-[400px] md:h-[550px] overflow-hidden rounded-none border border-border-custom relative bg-bg-secondary !mt-3">
+        
+        {/* Main Cover Image */}
+        <div className="md:col-span-2 md:row-span-2 overflow-hidden cursor-zoom-in relative">
+          {defaultImages[0] ? (
+            <img
+              src={defaultImages[0]}
+              alt={`${pkg.title} - Cover`}
+              onClick={() => setFullScreenImage(defaultImages[0])}
+              className="w-full h-full object-cover hover:scale-[1.03] transition-all duration-500"
+            />
+          ) : (
+            <div className="w-full h-full bg-bg-secondary flex items-center justify-center border border-border-custom/30 text-text-light text-xs font-semibold">
+              No Cover Photo Available
+            </div>
+          )}
+        </div>
+
+        {/* Top Middle Box */}
+        <div className="overflow-hidden cursor-zoom-in relative hidden md:block">
+          {defaultImages[1] ? (
+            <img
+              src={defaultImages[1]}
+              alt={`${pkg.title} - Highlight 1`}
+              onClick={() => setFullScreenImage(defaultImages[1])}
+              className="w-full h-full object-cover hover:scale-[1.03] transition-all duration-500"
+            />
+          ) : (
+            <div className="w-full h-full bg-bg-secondary flex items-center justify-center border border-border-custom/30 text-text-light text-[10px] font-semibold">
+              Photo Coming Soon
+            </div>
+          )}
+        </div>
+
+        {/* Top Right Box */}
+        <div className="overflow-hidden cursor-zoom-in relative hidden md:block">
+          {defaultImages[2] ? (
+            <img
+              src={defaultImages[2]}
+              alt={`${pkg.title} - Highlight 2`}
+              onClick={() => setFullScreenImage(defaultImages[2])}
+              className="w-full h-full object-cover hover:scale-[1.03] transition-all duration-500"
+            />
+          ) : (
+            <div className="w-full h-full bg-bg-secondary flex items-center justify-center border border-border-custom/30 text-text-light text-[10px] font-semibold">
+              Photo Coming Soon
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Middle Box */}
+        <div className="overflow-hidden cursor-zoom-in relative hidden md:block">
+          {defaultImages[3] ? (
+            <img
+              src={defaultImages[3]}
+              alt={`${pkg.title} - Highlight 3`}
+              onClick={() => setFullScreenImage(defaultImages[3])}
+              className="w-full h-full object-cover hover:scale-[1.03] transition-all duration-500"
+            />
+          ) : (
+            <div className="w-full h-full bg-bg-secondary flex items-center justify-center border border-border-custom/30 text-text-light text-[10px] font-semibold">
+              Photo Coming Soon
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Right Box */}
+        <div className="overflow-hidden cursor-zoom-in relative hidden md:block group">
+          {defaultImages[4] ? (
+            <img
+              src={defaultImages[4]}
+              alt={`${pkg.title} - Highlight 4`}
+              onClick={() => setFullScreenImage(defaultImages[4])}
+              className="w-full h-full object-cover hover:scale-[1.03] transition-all duration-500"
+            />
+          ) : (
+            <div className="w-full h-full bg-bg-secondary flex items-center justify-center border border-border-custom/30 text-text-light text-[10px] font-semibold">
+              Photo Coming Soon
+            </div>
+          )}
+          {defaultImages[0] && (
+            <button
+              onClick={() => setFullScreenImage(defaultImages[0])}
+              className="absolute bottom-4 right-4 bg-white hover:bg-gray-100 text-black font-semibold text-xs py-2 px-3 shadow-md hover:scale-105 transition-all duration-300 rounded-none flex items-center gap-1.5 border border-gray-300 cursor-pointer"
+            >
+              <Globe className="h-3.5 w-3.5" />
+              <span>Show all photos</span>
+            </button>
+          )}
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         
         {/* Left Columns: Main Content */}
         <div className="lg:col-span-2 space-y-8">
           
-          {/* Main Title Section */}
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="bg-theme-primary text-text-white text-xs font-bold px-3 py-1 rounded-none">
-                {pkg.destination}
-              </span>
-              {pkg.organizer?.isVerified && (
-                <span className="bg-theme-secondary text-white text-xs font-bold px-3 py-1 flex items-center space-x-1 rounded-none">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  <span>Verified Host</span>
-                </span>
-              )}
+          {/* Travel dates block */}
+          <div className="flex flex-wrap gap-6 text-sm text-text-secondary border-b border-border-custom pb-5">
+            <div className="flex items-center space-x-2">
+              <span className="font-bold text-text-primary">Departure:</span>
+              <span>{new Date(pkg.startDate).toLocaleDateString(undefined, { dateStyle: "long" })}</span>
             </div>
-            
-            <h1 className="text-3xl md:text-4xl font-semibold text-text-primary tracking-wide leading-tight">
-              {pkg.title}
-            </h1>
-
-            {/* Travel dates */}
-            <div className="flex flex-wrap gap-4 text-sm text-text-secondary border-t border-b border-border-custom py-3">
-              <div className="flex items-center space-x-2">
-                <span className="font-bold text-text-primary">Departure:</span>
-                <span>{new Date(pkg.startDate).toLocaleDateString(undefined, { dateStyle: "long" })}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="font-bold text-text-primary">Return:</span>
-                <span>{new Date(pkg.endDate).toLocaleDateString(undefined, { dateStyle: "long" })}</span>
-              </div>
+            <div className="flex items-center space-x-2">
+              <span className="font-bold text-text-primary">Return:</span>
+              <span>{new Date(pkg.endDate).toLocaleDateString(undefined, { dateStyle: "long" })}</span>
             </div>
           </div>
 
@@ -184,8 +313,8 @@ export default function TourDetailsPage() {
               </div>
             </div>
           )}
- 
-          {/* Itinerary Snapping Timeline Slider (Red Clock style) */}
+  
+          {/* Itinerary Snapping Timeline Slider */}
           {pkg.itinerary && pkg.itinerary.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-border-custom pb-2">
@@ -207,7 +336,7 @@ export default function TourDetailsPage() {
                   </button>
                 </div>
               </div>
- 
+  
               <div
                 ref={scrollRef}
                 className="flex overflow-x-auto gap-6 scroll-smooth snap-x snap-mandatory scrollbar-none pb-4"
@@ -221,11 +350,10 @@ export default function TourDetailsPage() {
                     {/* Day image layer */}
                     <div className="relative h-44 w-full bg-bg-secondary overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent z-10"></div>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={item.image || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&auto=format&fit=crop&q=60"}
                         alt={`Day ${item.day}`}
-                        onClick={() => setFullScreenImage(item.image || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&auto=format&fit=crop&q=60")}
+                        onClick={() => setFullScreenImage(item.image || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&auto=format&fit=crop&60")}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-zoom-in"
                       />
                       
@@ -233,7 +361,7 @@ export default function TourDetailsPage() {
                       <span className="absolute top-3 left-3 z-20 bg-theme-secondary text-white text-[10px] font-bold px-2.5 py-1 rounded-none">
                         Day {item.day}
                       </span>
- 
+  
                       {/* Day Title Overlay */}
                       <div className="absolute bottom-3 left-3 right-3 z-20">
                         <h4 className="text-sm font-semibold text-white leading-snug">
@@ -241,7 +369,7 @@ export default function TourDetailsPage() {
                         </h4>
                       </div>
                     </div>
- 
+  
                     {/* Day detail description */}
                     <div className="p-4 flex-grow space-y-2 max-h-40 overflow-y-auto text-xs text-text-secondary leading-relaxed bg-bg-primary">
                       <p>{item.description}</p>
@@ -252,34 +380,11 @@ export default function TourDetailsPage() {
             </div>
           )}
 
-          {/* Tour Gallery */}
-          {((pkg.inclusions as any)?.photos) && ((pkg.inclusions as any).photos.length > 0) && (
-            <div className="space-y-4">
-              <h3 className="text-xl font-semibold text-text-primary tracking-wide">Tour Gallery</h3>
-              <div className="flex flex-wrap gap-4">
-                {(pkg.inclusions as any).photos.map((photoUrl: string, idx: number) => (
-                  <div
-                    key={idx}
-                    onClick={() => setFullScreenImage(photoUrl)}
-                    className="relative w-36 h-28 border border-border-custom bg-bg-secondary overflow-hidden cursor-pointer hover:border-theme-primary transition-all group"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photoUrl}
-                      alt={`Tour Gallery ${idx + 1}`}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300 group-hover:scale-105"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Tour Host Profile section */}
           <div className="p-6 border border-border-custom bg-bg-secondary/40 space-y-4 rounded-none">
             <h4 className="text-sm font-semibold text-text-primary">Registered Tour Host Organizer</h4>
             <div className="flex items-start space-x-4">
-              <div className="bg-theme-primary text-text-white h-12 w-12 flex items-center justify-center text-xl font-bold rounded-none shrink-0">
+              <div className="bg-theme-primary text-white h-12 w-12 flex items-center justify-center text-xl font-bold rounded-none shrink-0">
                 {pkg.organizer?.fullName?.substring(0, 2) || "AG"}
               </div>
               <div className="space-y-1">
@@ -301,7 +406,7 @@ export default function TourDetailsPage() {
 
         {/* Right Column: Sticky Booking Selector Box */}
         <div className="space-y-6">
-          <div className="border border-border-custom bg-bg-primary p-6 space-y-6 sticky top-24 rounded-none">
+          <div className="border border-border-custom bg-bg-primary p-6 space-y-6 sticky top-24 shadow-xl rounded-none">
             
             {/* Price section */}
             <div>
@@ -316,7 +421,7 @@ export default function TourDetailsPage() {
             {/* Availability details */}
             <div className="flex items-center justify-between text-xs font-bold border-y border-border-custom py-3.5 text-text-secondary">
               <span>Seats Available:</span>
-              <span className="text-theme-primary bg-bg-secondary px-3 py-1 rounded-none border border-border-custom">
+              <span className="text-[#006CF9] bg-bg-secondary px-3 py-1 rounded-none border border-border-custom">
                 {pkg.availableSeats} of {pkg.maxSeats} Left
               </span>
             </div>
@@ -330,7 +435,7 @@ export default function TourDetailsPage() {
                   <select
                     value={seatsBooked}
                     onChange={(e) => setSeatsBooked(Number(e.target.value))}
-                    className="w-full px-3 py-2.5 text-sm text-text-primary bg-bg-secondary border border-border-custom outline-none focus:border-theme-primary rounded-none font-bold"
+                    className="w-full px-3 py-2.5 text-sm text-text-primary bg-bg-secondary border border-border-custom outline-none focus:border-[#006CF9] rounded-none font-bold"
                   >
                     {Array.from({ length: Math.min(10, pkg.availableSeats) }).map((_, i) => (
                       <option key={i + 1} value={i + 1}>
@@ -363,7 +468,7 @@ export default function TourDetailsPage() {
                 {/* Book Action Button */}
                 <button
                   onClick={handleBookNow}
-                  className="w-full bg-btn-primary text-btn-text-primary font-bold py-3.5 px-4 flex justify-center items-center space-x-2 hover:bg-opacity-90 transition rounded-none text-xs cursor-pointer"
+                  className="w-full bg-[#E11D48] text-white font-bold py-3.5 px-4 flex justify-center items-center space-x-2 hover:bg-opacity-95 transition rounded-none text-xs cursor-pointer shadow-md"
                 >
                   <Ticket className="h-4.5 w-4.5" />
                   <span>Lock Seats Deposit</span>
@@ -377,7 +482,7 @@ export default function TourDetailsPage() {
 
             {/* Note info */}
             <div className="flex items-start space-x-2 text-[10px] text-text-light leading-normal bg-bg-secondary/50 p-3 border border-border-custom/50">
-              <Info className="h-3.5 w-3.5 text-theme-primary shrink-0 mt-0.5" />
+              <Info className="h-3.5 w-3.5 text-[#006CF9] shrink-0 mt-0.5" />
               <span>
                 Paying the Seat Lock Deposit holds your seats. The remaining BDT balance is settled directly with the host organizer 24 hours prior to departure.
               </span>
@@ -395,7 +500,6 @@ export default function TourDetailsPage() {
           className="fixed inset-0 bg-black/90 z-[999] flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-200"
         >
           <div className="relative max-w-5xl max-h-[90vh] w-full h-full flex items-center justify-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={fullScreenImage}
               alt="Full screen gallery view"

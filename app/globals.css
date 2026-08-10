@@ -153,8 +153,64 @@ body {
   font-family: var(--font-inter), sans-serif;
 }
 
-h1, h2, h3, h4, h5, h6, .font-title {
+h1, .font-title {
   font-family: var(--font-recoleta), serif;
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+
+h2, h3, h4, h5, h6 {
+  font-family: var(--font-inter), sans-serif;
+  font-weight: 600;
+}
+
+/* Details page typography scale updates to enhance overall screen readability */
+.details-page-wrapper .text-xs {
+  font-size: 0.95rem !important; /* ~15.2px for labels */
+}
+.details-page-wrapper .text-sm {
+  font-size: 1.05rem !important; /* ~16.8px for description bodies and reviews */
+}
+.details-page-wrapper .text-base {
+  font-size: 1.2rem !important; /* ~19.2px for larger parameters */
+}
+
+/* Print media configurations to force exactly one page confirmed printout with receipt and summary */
+@media print {
+  @page {
+    margin: 0mm; /* Removed invalid !important to resolve CSS parsing error */
+    size: auto;
+  }
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+  }
+  /* Center and scale the printable receipt container horizontally with top space */
+  .print-receipt-container {
+    position: absolute !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: 15mm !important;
+    margin: 0 auto !important;
+    width: 600px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  /* Hide buttons explicitly inside the receipt */
+  .print-receipt-buttons,
+  .print-receipt-buttons * {
+    display: none !important;
+  }
+  /* Hide any floating action nodes, chat bubbles, or fixed buttons */
+  [class*="fixed"],
+  button[class*="fixed"],
+  a[class*="fixed"],
+  [style*="position: fixed"],
+  div[style*="z-index: 2147483647"],
+  iframe {
+    display: none !important;
+    visibility: hidden !important;
+  }
 }

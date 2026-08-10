@@ -50,12 +50,35 @@ export const hotelApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
+    getRoomAvailability: builder.query({
+      query: ({ roomId, checkIn, checkOut }) => ({
+        url: `/hotels/rooms/${roomId}/availability`,
+        method: "GET",
+        params: { checkIn, checkOut },
+      }),
+      providesTags: ["User"],
+    }),
     getBlockedRoomDates: builder.query({
       query: ({ roomId }) => ({
         url: `/hotels/rooms/${roomId}/blocked-dates`,
         method: "GET",
       }),
       providesTags: ["User"],
+    }),
+    getReviews: builder.query({
+      query: (hotelId) => ({
+        url: `/reviews/${hotelId}`,
+        method: "GET",
+      }),
+      providesTags: ["User"],
+    }),
+    createReview: builder.mutation({
+      query: (body) => ({
+        url: "/reviews",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["User"],
     }),
   }),
 });
@@ -68,4 +91,7 @@ export const {
   useCreateRoomMutation,
   useBlockRoomDatesMutation,
   useGetBlockedRoomDatesQuery,
+  useGetRoomAvailabilityQuery,
+  useGetReviewsQuery,
+  useCreateReviewMutation,
 } = hotelApi;

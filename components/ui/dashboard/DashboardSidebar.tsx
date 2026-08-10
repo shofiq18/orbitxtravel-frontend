@@ -52,6 +52,7 @@ export function DashboardSidebar() {
         { title: "Commissions Ledger", icon: Percent, href: "/dashboard/admin/commissions" },
         { title: "Payout Authorization", icon: Landmark, href: "/dashboard/admin/payouts" },
         { title: "Automation Trigger", icon: BellRing, href: "/dashboard/admin/alerts" },
+        { title: "My Profile", icon: UserCheck, href: "/dashboard/profile" },
         { title: "Back to Portal", icon: Layers2, href: "/" }
       ];
     } else if (role === "hotel_owner") {
@@ -59,12 +60,14 @@ export function DashboardSidebar() {
         { title: "Property Overview", icon: Home, href: "/dashboard/hotel-owner" },
         { title: "Room Inventory", icon: Bed, href: "/dashboard/hotel-owner/rooms" },
         { title: "Availability Calendar", icon: Calendar, href: "/dashboard/hotel-owner/calendar" },
+        { title: "My Profile", icon: UserCheck, href: "/dashboard/profile" },
         { title: "Back to Portal", icon: Layers2, href: "/" }
       ];
     } else if (role === "tour_organizer") {
       return [
         { title: "Tour Constructor", icon: Compass, href: "/dashboard/tour-organizer" },
         { title: "Lock B2B Rooms", icon: Hotel, href: "/dashboard/tour-organizer/b2b-rooms" },
+        { title: "My Profile", icon: UserCheck, href: "/dashboard/profile" },
         { title: "Back to Portal", icon: Layers2, href: "/" }
       ];
     }
