@@ -6,9 +6,11 @@ import { RootState } from "@/redux/store";
 import {
   useGetHotelsQuery,
   useCreateRoomMutation,
+  useUpdateRoomMutation,
+  useDeleteRoomMutation,
 } from "@/redux/api/hotel/hotelApi";
 import { useUploadFileMutation } from "@/redux/api/auth/authApi";
-import { Bed, ShieldCheck, Loader2, Plus } from "lucide-react";
+import { Bed, ShieldCheck, Loader2, Plus, Edit2, Trash2, X } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
@@ -30,7 +32,12 @@ export default function HotelRoomsPage() {
   const activeHotel = myHotels[0];
 
   const [createRoom, { isLoading: isCreatingRoom }] = useCreateRoomMutation();
+  const [updateRoom, { isLoading: isUpdatingRoom }] = useUpdateRoomMutation();
+  const [deleteRoom] = useDeleteRoomMutation();
   const [uploadFile] = useUploadFileMutation();
+
+  // Editing state
+  const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
 
   // Create Room Form States
   const [roomType, setRoomType] = useState("");
@@ -92,7 +99,7 @@ export default function HotelRoomsPage() {
     }
   };
 
-  const handleCreateRoom = async (e: React.FormEvent) => {
+  const handleSubmitRoom = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeHotel) return;
     if (!roomType || !roomB2C || !roomB2B) {
@@ -106,27 +113,76 @@ export default function HotelRoomsPage() {
     }
 
     try {
-      const response = await createRoom({
-        hotelId: activeHotel.id,
-        body: {
-          type: roomType,
-          amenities: roomAmenities.split(",").map((a) => a.trim()),
-          inventory: Number(inventory),
-          b2cPrice: Number(roomB2C),
-          b2bPrice: Number(roomB2B),
-          photos: [coverPhoto, ...galleryPhotos],
-        },
-      }).unwrap();
+      const body = {
+        type: roomType,
+        amenities: roomAmenities.split(",").map((a) => a.trim()).filter(Boolean),
+        inventory: Number(inventory),
+        b2cPrice: Number(roomB2C),
+        b2bPrice: Number(roomB2B),
+        photos: [coverPhoto, ...galleryPhotos],
+      };
+
+      if (editingRoomId) {
+        const response = await updateRoom({
+          roomId: editingRoomId,
+          body,
+        }).unwrap();
+        toast.success(response?.message || "Room type updated successfully!");
+        setEditingRoomId(null);
+      } else {
+        const response = await createRoom({
+          hotelId: activeHotel.id,
+          body,
+        }).unwrap();
+        toast.success(response?.message || "Room type listed successfully!");
+      }
       
-      toast.success(response?.message || "Room type listed successfully!");
       setRoomType("");
       setRoomB2C("");
       setRoomB2B("");
+      setInventory("5");
+      setRoomAmenities("King Bed, AC, Mini Fridge");
       setCoverPhoto("");
       setGalleryPhotos([]);
       refetchHotels();
     } catch (error: any) {
-      toast.error(error?.data?.message || "Failed to create room.");
+      toast.error(error?.data?.message || "Failed to submit room details.");
+    }
+  };
+
+  const handleStartEdit = (rm: any) => {
+    setEditingRoomId(rm.id);
+    setRoomType(rm.type);
+    setRoomB2C(rm.b2cPrice.toString());
+    setRoomB2B(rm.b2bPrice.toString());
+    setInventory(rm.inventory.toString());
+    setRoomAmenities(rm.amenities.join(", "));
+    setCoverPhoto(rm.photos?.[0] || "");
+    setGalleryPhotos(rm.photos?.slice(1) || []);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingRoomId(null);
+    setRoomType("");
+    setRoomB2C("");
+    setRoomB2B("");
+    setInventory("5");
+    setRoomAmenities("King Bed, AC, Mini Fridge");
+    setCoverPhoto("");
+    setGalleryPhotos([]);
+  };
+
+  const handleDeleteRoom = async (roomId: string) => {
+    if (!confirm("Are you sure you want to delete this room type? This action cannot be undone.")) return;
+    try {
+      const response = await deleteRoom(roomId).unwrap();
+      toast.success(response?.message || "Room type deleted successfully.");
+      if (editingRoomId === roomId) {
+        handleCancelEdit();
+      }
+      refetchHotels();
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to delete room.");
     }
   };
 
@@ -169,9 +225,9 @@ export default function HotelRoomsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Form */}
-        <form onSubmit={handleCreateRoom} className="border border-border-custom bg-bg-primary p-6 space-y-4 rounded-none h-fit">
+        <form onSubmit={handleSubmitRoom} className="border border-border-custom bg-bg-primary p-6 space-y-4 rounded-none h-fit">
           <h3 className="text-base font-semibold text-text-primary tracking-wide border-b border-border-custom pb-2">
-            List a New Room Type
+            {editingRoomId ? "Edit Room Type" : "List a New Room Type"}
           </h3>
 
           <div>
@@ -250,11 +306,21 @@ export default function HotelRoomsPage() {
                 {isUploadingCover ? "Uploading..." : "Select Cover Photo"}
               </label>
               {coverPhoto && (
-                <img
-                  src={coverPhoto}
-                  alt="Cover preview"
-                  className="w-16 h-16 object-cover border border-border-custom"
-                />
+                <div className="relative group w-16 h-16">
+                  <img
+                    src={coverPhoto}
+                    alt="Cover preview"
+                    className="w-16 h-16 object-cover border border-border-custom"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setCoverPhoto("")}
+                    className="absolute -top-1.5 -right-1.5 bg-red-600 hover:bg-red-700 text-white text-[9px] font-bold p-0.5 rounded-full w-4.5 h-4.5 flex items-center justify-center cursor-pointer shadow-md transition"
+                    title="Remove cover photo"
+                  >
+                    ✕
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -278,28 +344,55 @@ export default function HotelRoomsPage() {
                 {isUploadingGallery ? "Uploading..." : "Select Gallery Photos"}
               </label>
               {galleryPhotos.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-2">
+                <div className="flex flex-wrap gap-3 pt-2">
                   {galleryPhotos.map((url, i) => (
-                    <img
-                      key={i}
-                      src={url}
-                      alt="Gallery preview"
-                      className="w-12 h-12 object-cover border border-border-custom"
-                    />
+                    <div key={i} className="relative group w-12 h-12">
+                      <img
+                        src={url}
+                        alt="Gallery preview"
+                        className="w-12 h-12 object-cover border border-border-custom"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setGalleryPhotos(prev => prev.filter((_, idx) => idx !== i))}
+                        className="absolute -top-1.5 -right-1.5 bg-red-600 hover:bg-red-700 text-white text-[8px] font-bold p-0.5 rounded-full w-4.5 h-4.5 flex items-center justify-center cursor-pointer shadow-md transition"
+                        title="Remove image"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={isCreatingRoom}
-            className="w-full bg-btn-primary text-btn-text-primary font-bold py-2.5 flex justify-center items-center space-x-2 hover:bg-opacity-90 transition rounded-none text-xs cursor-pointer pt-3"
-          >
-            {isCreatingRoom ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            <span>Add Room Type</span>
-          </button>
+          <div className="flex flex-col gap-2">
+            <button
+              type="submit"
+              disabled={isCreatingRoom || isUpdatingRoom}
+              className="w-full bg-btn-primary text-btn-text-primary font-bold py-2.5 flex justify-center items-center space-x-2 hover:bg-opacity-90 transition rounded-none text-xs cursor-pointer pt-3"
+            >
+              {isCreatingRoom || isUpdatingRoom ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : editingRoomId ? (
+                <Edit2 className="h-4 w-4" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
+              <span>{editingRoomId ? "Update Room Type" : "Add Room Type"}</span>
+            </button>
+            {editingRoomId && (
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="w-full border border-border-custom text-text-primary font-bold py-2 flex justify-center items-center space-x-2 hover:bg-bg-secondary transition rounded-none text-xs cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+                <span>Cancel Edit</span>
+              </button>
+            )}
+          </div>
         </form>
 
         {/* Existing Rooms list (Col 2) */}
@@ -353,6 +446,26 @@ export default function HotelRoomsPage() {
                     <div>
                       <p className="text-[10px] text-text-light font-bold">Inventory</p>
                       <p className="text-sm font-extrabold text-theme-primary">{rm.inventory} Rooms</p>
+                    </div>
+                    <div className="flex items-center space-x-2.5 pl-4 border-l border-border-custom">
+                      <button
+                        onClick={() => handleStartEdit(rm)}
+                        className={`p-2 transition rounded-none border border-border-custom hover:bg-bg-secondary cursor-pointer ${
+                          editingRoomId === rm.id
+                            ? "bg-theme-primary/10 text-theme-primary border-theme-primary"
+                            : "text-text-secondary hover:text-text-primary"
+                        }`}
+                        title="Edit Room Type"
+                      >
+                        <Edit2 className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteRoom(rm.id)}
+                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 transition rounded-none border border-border-custom hover:border-red-200 cursor-pointer"
+                        title="Delete Room Type"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                   </div>
                 </div>

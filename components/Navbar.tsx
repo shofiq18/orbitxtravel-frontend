@@ -100,7 +100,7 @@ export default function Navbar() {
               {user.roles && user.roles.length === 1 && user.roles.includes("traveler") && (
                 <Link
                   href="/become-host"
-                  className="bg-theme-secondary text-text-white text-xs font-semibold px-4 py-2 border border-transparent hover:opacity-90 transition-all rounded-none"
+                  className="bg-theme-primary text-text-white text-xs font-semibold px-4 py-2 border border-transparent hover:opacity-90 transition-all rounded-none"
                 >
                   Become a Host
                 </Link>
@@ -292,7 +292,7 @@ export default function Navbar() {
                 <Link
                   href="/become-host"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block text-center bg-theme-secondary text-text-white text-xs font-bold py-2 rounded-none"
+                  className="block text-center bg-theme-primary text-text-white text-xs font-bold py-2 rounded-none"
                 >
                   Become a Host
                 </Link>

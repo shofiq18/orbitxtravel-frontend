@@ -36,12 +36,12 @@ export default function DashboardProfilePage() {
         {/* Profile Card Column */}
         <div className="bg-bg-primary border border-border-custom p-6 space-y-6 shadow-sm">
           <div className="flex flex-col items-center text-center space-y-3">
-            <div className="w-20 h-20 rounded-full bg-[#006CF9]/10 flex items-center justify-center text-[#006CF9] border border-[#006CF9]/20">
+            <div className="w-20 h-20 rounded-full bg-theme-primary/10 flex items-center justify-center text-theme-primary border border-theme-primary/20">
               <User className="h-10 w-10" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-text-primary">{user.fullName}</h2>
-              <span className="inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 mt-1 text-white bg-[#006CF9]">
+              <span className="inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 mt-1 text-white bg-theme-primary">
                 {formatRole(user.currentRole || "traveler")}
               </span>
             </div>
@@ -65,7 +65,7 @@ export default function DashboardProfilePage() {
         {/* Roles & Identity Column */}
         <div className="lg:col-span-2 bg-bg-primary border border-border-custom p-6 space-y-6 shadow-sm">
           <h3 className="text-base font-bold text-text-primary border-b border-border-custom pb-3 flex items-center gap-2">
-            <Shield className="h-5 w-5 text-[#006CF9]" />
+            <Shield className="h-5 w-5 text-theme-primary" />
             <span>Identity & Access Permissions</span>
           </h3>
 
@@ -78,7 +78,7 @@ export default function DashboardProfilePage() {
                     key={role}
                     className={`text-xs px-3 py-1.5 border font-semibold ${
                       user.currentRole === role
-                        ? "bg-[#006CF9]/10 border-[#006CF9] text-[#006CF9] font-bold"
+                        ? "bg-theme-primary/10 border-theme-primary text-theme-primary font-bold"
                         : "bg-bg-secondary border-border-custom text-text-secondary"
                     }`}
                   >

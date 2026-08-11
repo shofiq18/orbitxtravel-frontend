@@ -123,7 +123,7 @@ export default function Footer() {
               />
               <button 
                 type="submit"
-                className="bg-theme-accent text-black font-bold px-4 hover:bg-opacity-90 transition-all duration-300 rounded-none cursor-pointer flex items-center justify-center"
+                className="bg-theme-accent text-white font-bold px-4 hover:bg-opacity-90 transition-all duration-300 rounded-none cursor-pointer flex items-center justify-center"
                 aria-label="Subscribe"
               >
                 <Send className="h-3.5 w-3.5" />

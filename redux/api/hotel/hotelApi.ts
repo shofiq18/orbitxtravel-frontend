@@ -80,6 +80,28 @@ export const hotelApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
+    deleteHotel: builder.mutation({
+      query: (id) => ({
+        url: `/hotels/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["User"],
+    }),
+    updateRoom: builder.mutation({
+      query: ({ roomId, body }) => ({
+        url: `/hotels/rooms/${roomId}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["User"],
+    }),
+    deleteRoom: builder.mutation({
+      query: (roomId) => ({
+        url: `/hotels/rooms/${roomId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["User"],
+    }),
   }),
 });
 
@@ -94,4 +116,7 @@ export const {
   useGetRoomAvailabilityQuery,
   useGetReviewsQuery,
   useCreateReviewMutation,
+  useDeleteHotelMutation,
+  useUpdateRoomMutation,
+  useDeleteRoomMutation,
 } = hotelApi;

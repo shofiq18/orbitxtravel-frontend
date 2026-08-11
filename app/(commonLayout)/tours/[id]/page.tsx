@@ -37,7 +37,7 @@ export default function TourDetailsPage() {
   const [seatsBooked, setSeatsBooked] = useState(1);
  
   // Lightbox Zoom Modal States
-  const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
+  const [activePhotoIdx, setActivePhotoIdx] = useState<number | string | null>(null);
  
   // Itinerary Scroll Refs
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -96,42 +96,23 @@ export default function TourDetailsPage() {
   // User actual photos arrays with empty placeholders fallback
   const defaultImages = [
     (pkg.inclusions as any)?.coverImage || "",
-    "",
-    "",
-    "",
-    "",
+    (pkg.inclusions as any)?.photos?.[0] || "",
+    (pkg.inclusions as any)?.photos?.[1] || "",
+    (pkg.inclusions as any)?.photos?.[2] || "",
+    (pkg.inclusions as any)?.photos?.[3] || "",
   ];
+
+  const allPhotos = defaultImages.filter(Boolean);
 
   return (
     <div className="w-full mx-auto px-8 lg:px-16 py-10 space-y-8 details-page-wrapper">
       
-      {/* Back Link */}
-      <div className="flex items-center justify-between">
-        <Link href="/" className="inline-flex items-center space-x-2 text-xs font-bold text-text-light hover:text-text-secondary">
-          <ArrowLeft className="h-4 w-4" />
-          <span>Back to Search</span>
-        </Link>
-      </div>
-
       {/* Top Title & Actions Bar */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border-custom pb-5 mt-2">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-3">
-            {pkg.destination?.toLowerCase() !== pkg.title?.toLowerCase() && (
-              <span className="bg-theme-primary text-white text-[10px] font-extrabold px-3 py-1 uppercase tracking-wider">
-                {pkg.destination}
-              </span>
-            )}
-            {pkg.organizer?.isVerified && (
-              <span className="bg-theme-secondary text-white text-[10px] font-extrabold px-3 py-1 flex items-center space-x-1 uppercase tracking-wider">
-                <ShieldCheck className="h-3.5 w-3.5" />
-                <span>Verified Host</span>
-              </span>
-            )}
-          </div>
-          <h1 className="text-2xl md:text-3xl font-semibold text-text-primary tracking-wide leading-tight">{pkg.title}</h1>
-        </div>
-        <div className="flex items-center space-x-4 text-xs font-semibold text-text-secondary shrink-0">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border-custom pb-4 mb-2 mt-0">
+        <h1 className="text-2xl md:text-3xl font-extrabold text-text-primary tracking-wide leading-tight">{pkg.title}</h1>
+        
+        {/* Right Action buttons */}
+        <div className="flex items-center space-x-2 text-xs font-semibold text-text-secondary shrink-0">
           <button 
             onClick={() => {
               if (typeof window !== "undefined") {
@@ -139,16 +120,16 @@ export default function TourDetailsPage() {
                 toast.success("Link copied to clipboard!");
               }
             }}
-            className="flex items-center gap-1.5 hover:underline cursor-pointer py-2 px-3.5 bg-bg-secondary border border-border-custom hover:bg-opacity-80 transition"
+            className="flex items-center gap-1.5 hover:bg-bg-secondary hover:text-text-primary py-1.5 px-3 bg-transparent transition rounded-none font-bold cursor-pointer text-xs"
           >
-            <Share className="h-4 w-4 text-text-light" />
+            <Share className="h-3.5 w-3.5 text-text-light" />
             <span>Share</span>
           </button>
           <button 
             onClick={() => toast.success("Tour package saved to favorites!")}
-            className="flex items-center gap-1.5 hover:underline cursor-pointer py-2 px-3.5 bg-bg-secondary border border-border-custom hover:bg-opacity-80 transition"
+            className="flex items-center gap-1.5 hover:bg-bg-secondary hover:text-text-primary py-1.5 px-3 bg-transparent transition rounded-none font-bold cursor-pointer text-xs"
           >
-            <Heart className="h-4 w-4 text-red-500" />
+            <Heart className="h-3.5 w-3.5 text-red-500" />
             <span>Save</span>
           </button>
         </div>
@@ -163,7 +144,7 @@ export default function TourDetailsPage() {
             <img
               src={defaultImages[0]}
               alt={`${pkg.title} - Cover`}
-              onClick={() => setFullScreenImage(defaultImages[0])}
+              onClick={() => setActivePhotoIdx(0)}
               className="w-full h-full object-cover hover:scale-[1.03] transition-all duration-500"
             />
           ) : (
@@ -179,7 +160,7 @@ export default function TourDetailsPage() {
             <img
               src={defaultImages[1]}
               alt={`${pkg.title} - Highlight 1`}
-              onClick={() => setFullScreenImage(defaultImages[1])}
+              onClick={() => setActivePhotoIdx(1)}
               className="w-full h-full object-cover hover:scale-[1.03] transition-all duration-500"
             />
           ) : (
@@ -195,7 +176,7 @@ export default function TourDetailsPage() {
             <img
               src={defaultImages[2]}
               alt={`${pkg.title} - Highlight 2`}
-              onClick={() => setFullScreenImage(defaultImages[2])}
+              onClick={() => setActivePhotoIdx(2)}
               className="w-full h-full object-cover hover:scale-[1.03] transition-all duration-500"
             />
           ) : (
@@ -211,7 +192,7 @@ export default function TourDetailsPage() {
             <img
               src={defaultImages[3]}
               alt={`${pkg.title} - Highlight 3`}
-              onClick={() => setFullScreenImage(defaultImages[3])}
+              onClick={() => setActivePhotoIdx(3)}
               className="w-full h-full object-cover hover:scale-[1.03] transition-all duration-500"
             />
           ) : (
@@ -227,7 +208,7 @@ export default function TourDetailsPage() {
             <img
               src={defaultImages[4]}
               alt={`${pkg.title} - Highlight 4`}
-              onClick={() => setFullScreenImage(defaultImages[4])}
+              onClick={() => setActivePhotoIdx(4)}
               className="w-full h-full object-cover hover:scale-[1.03] transition-all duration-500"
             />
           ) : (
@@ -237,7 +218,7 @@ export default function TourDetailsPage() {
           )}
           {defaultImages[0] && (
             <button
-              onClick={() => setFullScreenImage(defaultImages[0])}
+              onClick={() => setActivePhotoIdx(0)}
               className="absolute bottom-4 right-4 bg-white hover:bg-gray-100 text-black font-semibold text-xs py-2 px-3 shadow-md hover:scale-105 transition-all duration-300 rounded-none flex items-center gap-1.5 border border-gray-300 cursor-pointer"
             >
               <Globe className="h-3.5 w-3.5" />
@@ -256,11 +237,11 @@ export default function TourDetailsPage() {
           <div className="flex flex-wrap gap-6 text-sm text-text-secondary border-b border-border-custom pb-5">
             <div className="flex items-center space-x-2">
               <span className="font-bold text-text-primary">Departure:</span>
-              <span>{new Date(pkg.startDate).toLocaleDateString(undefined, { dateStyle: "long" })}</span>
+              <span>{new Date(pkg.startDate).toLocaleString(undefined, { dateStyle: "long", timeStyle: "short" })}</span>
             </div>
             <div className="flex items-center space-x-2">
               <span className="font-bold text-text-primary">Return:</span>
-              <span>{new Date(pkg.endDate).toLocaleDateString(undefined, { dateStyle: "long" })}</span>
+              <span>{new Date(pkg.endDate).toLocaleString(undefined, { dateStyle: "long", timeStyle: "short" })}</span>
             </div>
           </div>
 
@@ -342,18 +323,18 @@ export default function TourDetailsPage() {
                 className="flex overflow-x-auto gap-6 scroll-smooth snap-x snap-mandatory scrollbar-none pb-4"
                 style={{ scrollbarWidth: "none" }}
               >
-                {pkg.itinerary.map((item: any, idx: number) => (
+                 {pkg.itinerary.map((item: any, idx: number) => (
                   <div
                     key={idx}
-                    className="w-[320px] shrink-0 border border-border-custom bg-bg-primary relative flex flex-col snap-start overflow-hidden group"
+                    className="w-[320px] h-[280px] shrink-0 border border-border-custom bg-bg-primary relative snap-start overflow-hidden group"
                   >
                     {/* Day image layer */}
-                    <div className="relative h-44 w-full bg-bg-secondary overflow-hidden">
+                    <div className="relative w-full h-full bg-bg-secondary overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent z-10"></div>
                       <img
                         src={item.image || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&auto=format&fit=crop&q=60"}
                         alt={`Day ${item.day}`}
-                        onClick={() => setFullScreenImage(item.image || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&auto=format&fit=crop&60")}
+                        onClick={() => setActivePhotoIdx(item.image || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&auto=format&fit=crop&q=60")}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-zoom-in"
                       />
                       
@@ -363,16 +344,18 @@ export default function TourDetailsPage() {
                       </span>
   
                       {/* Day Title Overlay */}
-                      <div className="absolute bottom-3 left-3 right-3 z-20">
+                      <div className="absolute bottom-3 left-3 right-3 z-20 transition-opacity duration-300 group-hover:opacity-0">
                         <h4 className="text-sm font-semibold text-white leading-snug">
                           {item.title}
                         </h4>
                       </div>
                     </div>
   
-                    {/* Day detail description */}
-                    <div className="p-4 flex-grow space-y-2 max-h-40 overflow-y-auto text-xs text-text-secondary leading-relaxed bg-bg-primary">
-                      <p>{item.description}</p>
+                    {/* Day detail description (Hover Reveal Overlay) */}
+                    <div className="absolute inset-0 bg-black/95 text-white p-5 flex flex-col justify-center translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-in-out z-30 overflow-y-auto scrollbar-none">
+                      <span className="text-[10px] text-theme-secondary font-bold uppercase tracking-wider mb-1 block">Day {item.day}</span>
+                      <h4 className="text-sm font-bold text-white mb-2 leading-tight">{item.title}</h4>
+                      <p className="text-xs text-gray-300 leading-relaxed font-medium">{item.description}</p>
                     </div>
                   </div>
                 ))}
@@ -410,18 +393,18 @@ export default function TourDetailsPage() {
             
             {/* Price section */}
             <div>
-              <p className="text-[10px] text-text-light font-bold">Per Seat Lock Deposit Fee</p>
+              <p className="text-[11px] text-text-secondary font-bold uppercase tracking-wider">Per Seat Lock Deposit Fee</p>
               <div className="flex items-baseline space-x-2">
-                <span className="text-3xl font-extrabold text-theme-secondary">BDT {pkg.minimumSeatLockFee}</span>
-                <span className="text-xs text-text-light font-semibold">Deposit Lock Fee</span>
+                <span className="text-3xl font-black text-text-primary">BDT {pkg.minimumSeatLockFee}</span>
+                <span className="text-xs text-text-secondary font-bold">Deposit Lock Fee</span>
               </div>
-              <p className="text-xs text-text-light mt-1">Full Seat Cost: BDT {pkg.totalPackagePrice}</p>
+              <p className="text-xs text-text-primary font-bold mt-1">Full Seat Cost: <span className="font-extrabold text-black">BDT {pkg.totalPackagePrice}</span></p>
             </div>
 
             {/* Availability details */}
-            <div className="flex items-center justify-between text-xs font-bold border-y border-border-custom py-3.5 text-text-secondary">
+            <div className="flex items-center justify-between text-xs font-bold border-y border-border-custom py-3.5 text-text-primary">
               <span>Seats Available:</span>
-              <span className="text-[#006CF9] bg-bg-secondary px-3 py-1 rounded-none border border-border-custom">
+              <span className="text-text-primary font-extrabold bg-bg-secondary px-3 py-1 rounded-none border border-border-custom">
                 {pkg.availableSeats} of {pkg.maxSeats} Left
               </span>
             </div>
@@ -431,11 +414,11 @@ export default function TourDetailsPage() {
                 
                 {/* Seats Booked Selector */}
                 <div>
-                  <label className="block text-xs font-bold text-text-secondary mb-2">Select Seats Number</label>
+                  <label className="block text-xs font-bold text-text-primary mb-2">Select Seats Number</label>
                   <select
                     value={seatsBooked}
                     onChange={(e) => setSeatsBooked(Number(e.target.value))}
-                    className="w-full px-3 py-2.5 text-sm text-text-primary bg-bg-secondary border border-border-custom outline-none focus:border-[#006CF9] rounded-none font-bold"
+                    className="w-full px-3 py-2.5 text-sm text-text-primary bg-bg-secondary border border-border-custom outline-none focus:border-theme-primary rounded-none font-bold"
                   >
                     {Array.from({ length: Math.min(10, pkg.availableSeats) }).map((_, i) => (
                       <option key={i + 1} value={i + 1}>
@@ -446,29 +429,29 @@ export default function TourDetailsPage() {
                 </div>
 
                 {/* Billing Summary Box */}
-                <div className="p-4 bg-bg-secondary border border-border-custom space-y-3.5 rounded-none text-xs text-text-secondary">
-                  <div className="flex justify-between">
+                <div className="p-4 bg-bg-secondary border border-border-custom space-y-3.5 rounded-none text-xs text-text-primary">
+                  <div className="flex justify-between font-medium">
                     <span>Selected Seats:</span>
-                    <span className="font-bold text-text-primary">{seatsBooked}</span>
+                    <span className="font-bold text-black">{seatsBooked}</span>
                   </div>
-                  <div className="flex justify-between text-theme-secondary font-bold">
+                  <div className="flex justify-between text-black font-bold">
                     <span>Due Now (Seat Lock Fee):</span>
-                    <span>BDT {totalDueNow}</span>
+                    <span className="text-emerald-700 font-extrabold text-sm">BDT {totalDueNow}</span>
                   </div>
-                  <div className="flex justify-between text-text-light font-medium border-t border-border-custom pt-2">
+                  <div className="flex justify-between text-text-secondary font-medium border-t border-border-custom/60 pt-2.5">
                     <span>Due Later (At Departure):</span>
-                    <span>BDT {totalDueLater}</span>
+                    <span className="font-bold text-black">BDT {totalDueLater}</span>
                   </div>
-                  <div className="flex justify-between font-bold text-text-primary border-t border-border-custom pt-2">
+                  <div className="flex justify-between font-bold text-black border-t border-border-custom/60 pt-2.5">
                     <span>Total Package Cost:</span>
-                    <span>BDT {totalFullPrice}</span>
+                    <span className="font-extrabold text-sm">BDT {totalFullPrice}</span>
                   </div>
                 </div>
 
                 {/* Book Action Button */}
                 <button
                   onClick={handleBookNow}
-                  className="w-full bg-[#E11D48] text-white font-bold py-3.5 px-4 flex justify-center items-center space-x-2 hover:bg-opacity-95 transition rounded-none text-xs cursor-pointer shadow-md"
+                  className="w-full bg-btn-primary text-btn-text-primary font-bold py-3.5 px-4 flex justify-center items-center space-x-2 hover:bg-opacity-95 transition rounded-none text-xs cursor-pointer shadow-md"
                 >
                   <Ticket className="h-4.5 w-4.5" />
                   <span>Lock Seats Deposit</span>
@@ -482,7 +465,7 @@ export default function TourDetailsPage() {
 
             {/* Note info */}
             <div className="flex items-start space-x-2 text-[10px] text-text-light leading-normal bg-bg-secondary/50 p-3 border border-border-custom/50">
-              <Info className="h-3.5 w-3.5 text-[#006CF9] shrink-0 mt-0.5" />
+              <Info className="h-3.5 w-3.5 text-theme-primary shrink-0 mt-0.5" />
               <span>
                 Paying the Seat Lock Deposit holds your seats. The remaining BDT balance is settled directly with the host organizer 24 hours prior to departure.
               </span>
@@ -494,23 +477,62 @@ export default function TourDetailsPage() {
       </div>
  
       {/* Lightbox Modal */}
-      {fullScreenImage && (
+      {activePhotoIdx !== null && (
         <div
-          onClick={() => setFullScreenImage(null)}
-          className="fixed inset-0 bg-black/90 z-[999] flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-200"
+          onClick={() => setActivePhotoIdx(null)}
+          className="fixed inset-0 bg-black/95 z-[999] flex items-center justify-center p-4 animate-in fade-in duration-200"
         >
-          <div className="relative max-w-5xl max-h-[90vh] w-full h-full flex items-center justify-center">
-            <img
-              src={fullScreenImage}
-              alt="Full screen gallery view"
-              className="max-h-full object-contain shadow-2xl"
-            />
+          {/* Main Modal Wrapper (stops background click closure on content click) */}
+          <div 
+            onClick={(e) => e.stopPropagation()} 
+            className="relative max-w-5xl max-h-[90vh] w-full h-full flex flex-col items-center justify-center"
+          >
+            {/* Close button */}
             <button
-              onClick={() => setFullScreenImage(null)}
-              className="absolute top-4 right-4 text-white bg-black/60 hover:bg-black/85 p-2 rounded-full border border-gray-700 font-extrabold text-sm w-10 h-10 flex items-center justify-center cursor-pointer"
+              onClick={() => setActivePhotoIdx(null)}
+              className="absolute top-4 right-4 z-50 text-white bg-black/60 hover:bg-black/85 p-2 rounded-full border border-gray-700 font-extrabold text-sm w-10 h-10 flex items-center justify-center cursor-pointer"
             >
               ✕
             </button>
+
+            {/* Photo Slide Area */}
+            <div className="relative flex items-center justify-center w-full h-full">
+              {/* Left Navigation Arrow */}
+              {typeof activePhotoIdx === 'number' && allPhotos.length > 1 && (
+                <button
+                  onClick={() => setActivePhotoIdx(prev => typeof prev === 'number' ? (prev === 0 ? allPhotos.length - 1 : prev - 1) : 0)}
+                  className="absolute left-4 z-40 bg-black/50 hover:bg-black/80 text-white p-3 rounded-full border border-gray-800 transition cursor-pointer flex items-center justify-center"
+                  aria-label="Previous Photo"
+                >
+                  <ArrowLeft className="h-6.5 w-6.5 text-white" />
+                </button>
+              )}
+
+              {/* Image element */}
+              <img
+                src={typeof activePhotoIdx === 'number' ? allPhotos[activePhotoIdx] : activePhotoIdx}
+                alt={typeof activePhotoIdx === 'number' ? `Full screen view - ${activePhotoIdx + 1}` : "Itinerary view"}
+                className="max-h-[80vh] max-w-full object-contain shadow-2xl transition-all duration-300"
+              />
+
+              {/* Right Navigation Arrow */}
+              {typeof activePhotoIdx === 'number' && allPhotos.length > 1 && (
+                <button
+                  onClick={() => setActivePhotoIdx(prev => typeof prev === 'number' ? (prev === allPhotos.length - 1 ? 0 : prev + 1) : 0)}
+                  className="absolute right-4 z-40 bg-black/50 hover:bg-black/80 text-white p-3 rounded-full border border-gray-800 transition cursor-pointer flex items-center justify-center"
+                  aria-label="Next Photo"
+                >
+                  <ArrowRight className="h-6.5 w-6.5 text-white" />
+                </button>
+              )}
+            </div>
+
+            {/* Photo Counter Label */}
+            {typeof activePhotoIdx === 'number' && (
+              <div className="absolute bottom-4 bg-black/75 px-4 py-1.5 text-xs text-white font-bold tracking-widest uppercase">
+                Photo {activePhotoIdx + 1} of {allPhotos.length}
+              </div>
+            )}
           </div>
         </div>
       )}

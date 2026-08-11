@@ -31,7 +31,9 @@ import {
   Bed,
   Calendar,
   Compass,
-  Hotel
+  Hotel,
+  Globe,
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDispatch, useSelector } from "react-redux";
@@ -49,8 +51,8 @@ export function DashboardSidebar() {
     if (role === "admin") {
       return [
         { title: "Vendor Onboarding", icon: UserCheck, href: "/dashboard/admin" },
-        { title: "Commissions Ledger", icon: Percent, href: "/dashboard/admin/commissions" },
-        { title: "Payout Authorization", icon: Landmark, href: "/dashboard/admin/payouts" },
+        { title: "User Management", icon: Users, href: "/dashboard/admin/users" },
+        { title: "Accounting Management", icon: Landmark, href: "/dashboard/admin/accounting" },
         { title: "Automation Trigger", icon: BellRing, href: "/dashboard/admin/alerts" },
         { title: "My Profile", icon: UserCheck, href: "/dashboard/profile" },
         { title: "Back to Portal", icon: Layers2, href: "/" }
@@ -100,16 +102,15 @@ export function DashboardSidebar() {
   const sidebarContent = (
     <>
       {/* Logo & Toggle */}
-      <div className="flex items-center justify-between p-4 border-b">
-        {!collapsed && (
-          <Link href="/" className="flex items-center">
-            <Image
-              src="/icon/dashboard-logo.png"
-              alt="Logo"
-              width={139}
-              height={50}
-              className="w-auto"
-            />
+      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        {!collapsed ? (
+          <Link href="/" className="flex items-center space-x-2 text-theme-primary font-bold text-xl tracking-wide no-underline">
+            <Globe className="h-6 w-6 shrink-0" />
+            <span>OrbitX Travel</span>
+          </Link>
+        ) : (
+          <Link href="/" className="flex items-center justify-center w-full text-theme-primary no-underline">
+            <Globe className="h-6 w-6" />
           </Link>
         )}
         {/* Desktop toggle */}
@@ -148,9 +149,9 @@ export function DashboardSidebar() {
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-none text-sm font-medium transition-all duration-200",
+                    "flex items-center gap-3 px-4 py-3 rounded-none text-sm font-medium transition-all duration-200 no-underline",
                     isActive
-                      ? "bg-[#006CF9]/20 text-[#006CF9] shadow-md"
+                      ? "bg-theme-primary/20 text-theme-primary shadow-md"
                       : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
                     collapsed && "lg:justify-center"
                   )}
@@ -158,7 +159,7 @@ export function DashboardSidebar() {
                   <Icon
                     className={cn(
                       "h-5 w-5 flex-shrink-0",
-                      isActive && "text-[#006CF9]"
+                      isActive && "text-theme-primary"
                     )}
                   />
                   {/* Always show label on mobile; hide when collapsed on desktop */}
@@ -173,7 +174,7 @@ export function DashboardSidebar() {
       </nav>
 
       {/* Logout */}
-      <div className="p-4 border-t">
+      <div className="p-4 border-t border-gray-200">
         <button
           onClick={handleLogout}
           className={cn(
@@ -204,7 +205,7 @@ export function DashboardSidebar() {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-30 lg:hidden"
+          className="fixed inset-0 bg-black/10 z-30 lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}

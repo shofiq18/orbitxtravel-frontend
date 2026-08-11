@@ -297,7 +297,7 @@ export default function SignUpForm() {
 
         {/* Step 3: Success Screen */}
         {step === "success" && (
-          <div className="text-left py-6">
+          <div className="text-center py-6 flex flex-col items-center justify-center max-w-md mx-auto">
             <CheckCircle2 className="h-20 w-20 text-theme-secondary mb-4" />
             <h1 className="text-3xl font-semibold text-text-primary tracking-wide">Verified!</h1>
             <p className="mt-2 text-base text-text-secondary">
@@ -306,7 +306,7 @@ export default function SignUpForm() {
             
             <Link
               href="/login"
-              className="mt-8 block w-full bg-btn-primary text-btn-text-primary font-bold py-4 px-6 transition hover:bg-opacity-90 rounded-none text-base"
+              className="mt-8 block w-full bg-btn-primary text-btn-text-primary font-bold py-4 px-6 transition hover:bg-opacity-90 rounded-none text-base text-center"
             >
               Go to Login
             </Link>

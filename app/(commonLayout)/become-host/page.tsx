@@ -187,7 +187,7 @@ export default function BecomeHostPage() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Grand Palace Resorts Ltd."
+                  placeholder={vendorType === "hotel_owner" ? "e.g. Grand Palace Resorts Ltd." : "e.g. Pathfinders Tours & Travels"}
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
                   className="w-full px-3 py-2 text-sm text-text-primary border border-border-custom bg-bg-secondary outline-none focus:border-theme-primary rounded-none"
@@ -199,7 +199,7 @@ export default function BecomeHostPage() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. LIC-49030-HOTEL"
+                  placeholder={vendorType === "hotel_owner" ? "e.g. LIC-49030-HOTEL" : "e.g. LIC-99302-TOUR"}
                   value={licenseNumber}
                   onChange={(e) => setLicenseNumber(e.target.value)}
                   className="w-full px-3 py-2 text-sm text-text-primary border border-border-custom bg-bg-secondary outline-none focus:border-theme-primary rounded-none"
@@ -212,7 +212,7 @@ export default function BecomeHostPage() {
               <input
                 type="text"
                 required
-                placeholder="e.g. Road 12, Banani Block E, Dhaka"
+                placeholder={vendorType === "hotel_owner" ? "e.g. Road 12, Banani Block E, Dhaka" : "e.g. Level 4, Cosmos Tower, Banani, Dhaka"}
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 className="w-full px-3 py-2 text-sm text-text-primary border border-border-custom bg-bg-secondary outline-none focus:border-theme-primary rounded-none"
@@ -378,7 +378,7 @@ export default function BecomeHostPage() {
               Return Home
             </Link>
             <Link
-              href="/profile"
+              href="/dashboard/profile"
               className="bg-btn-primary text-btn-text-primary px-6 py-2.5 font-bold text-xs rounded-none hover:bg-opacity-90 transition"
             >
               Check Profile Status

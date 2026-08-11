@@ -26,6 +26,21 @@ export const tourApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
+    updatePackage: builder.mutation({
+      query: ({ id, body }) => ({
+        url: `/tours/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["User"],
+    }),
+    deletePackage: builder.mutation({
+      query: (id) => ({
+        url: `/tours/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["User"],
+    }),
   }),
 });
 
@@ -33,4 +48,6 @@ export const {
   useGetPackagesQuery,
   useGetPackageByIdQuery,
   useCreatePackageMutation,
+  useUpdatePackageMutation,
+  useDeletePackageMutation,
 } = tourApi;

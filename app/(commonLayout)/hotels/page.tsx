@@ -196,7 +196,7 @@ export default function FindHotelsPage() {
                   alt={hotel.name}
                   className="w-full h-full object-cover transition-transform duration-500 "
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10 z-10 transition-opacity duration-300 group-hover:from-black/95"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent z-10 transition-opacity duration-300 group-hover:from-black/85"></div>
 
                 {hotel.isVerified && (
                   <span className="absolute top-3 right-3 z-20 bg-theme-secondary text-white px-2.5 py-1 text-[10px] font-bold flex items-center space-x-1 rounded-none">
@@ -215,8 +215,8 @@ export default function FindHotelsPage() {
                   </p>
                   <div className="max-h-0 opacity-0 overflow-hidden group-hover:max-h-20 group-hover:opacity-100 transition-all duration-300 ease-in-out border-t border-gray-700/80 pt-3 mt-1 flex items-center justify-between">
                     <div>
-                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Standard Rate</p>
-                      <p className="text-sm font-extrabold text-theme-accent">
+                      <p className="text-[10px] text-gray-300 font-medium uppercase tracking-wider">Standard Rate</p>
+                      <p className="text-base font-bold text-white mt-0.5">
                         {startingPrice ? `BDT ${startingPrice} / Night` : "Contact for rates"}
                       </p>
                     </div>

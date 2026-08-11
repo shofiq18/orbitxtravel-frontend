@@ -47,6 +47,21 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
+    getUsers: builder.query({
+      query: () => ({
+        url: "/admin/users",
+        method: "GET",
+      }),
+      providesTags: ["User"],
+    }),
+    suspendUser: builder.mutation({
+      query: ({ userId, body }) => ({
+        url: `/admin/users/${userId}/suspend`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["User"],
+    }),
   }),
 });
 
@@ -57,4 +72,6 @@ export const {
   useGetPayoutsQuery,
   useReleasePayoutMutation,
   useTriggerPreTripAlertsMutation,
+  useGetUsersQuery,
+  useSuspendUserMutation,
 } = adminApi;

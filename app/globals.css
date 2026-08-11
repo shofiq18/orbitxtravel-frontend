@@ -19,16 +19,16 @@
   --text-light: #94a3b8;
   --text-white: #ffffff;
 
-  --btn-bg-primary: #0f172a;
+  --btn-bg-primary: var(--theme-primary);
   --btn-text-primary: #ffffff;
   --btn-bg-secondary: #f1f5f9;
   --btn-text-secondary: #0f172a;
   --btn-bg-accent: #2563eb;
   --btn-text-accent: #ffffff;
 
-  --theme-primary: #1e3a8a;
+  --theme-primary: #0061AA;
   --theme-secondary: #0d9488;
-  --theme-accent: #eab308;
+  --theme-accent: #0082E6;
   --border-custom: #e2e8f0;
 
   /* Overrides for standard shadcn and utility variables */
@@ -74,7 +74,7 @@
 
   --theme-primary: #3b82f6;
   --theme-secondary: #14b8a6;
-  --theme-accent: #f59e0b;
+  --theme-accent: #60a5fa;
   --border-custom: #334155;
 }
 

@@ -152,7 +152,7 @@ export default function AdminOnboardingPage() {
               </button>
             </div>
 
-            <div className="text-xs space-y-3 font-semibold text-text-secondary">
+            <div className="text-xs space-y-3 font-semibold text-text-secondary max-h-[55vh] overflow-y-auto pr-2">
               <div className="grid grid-cols-3 gap-2 py-1.5 border-b border-border-custom/40">
                 <span className="text-text-light font-bold">User ID</span>
                 <span className="col-span-2 font-mono text-text-primary select-all">{selectedApp.id}</span>
@@ -179,6 +179,34 @@ export default function AdminOnboardingPage() {
                 <span className="text-text-light font-bold">Business Address</span>
                 <span className="col-span-2 text-text-primary">{selectedApp.businessProfile?.address || "N/A"}</span>
               </div>
+
+              {/* Payout Details Section */}
+              <div className="mt-4 pt-3 border-t border-border-custom/60 space-y-2">
+                <h4 className="text-xs font-bold text-text-primary uppercase tracking-wider mb-2">
+                  Payout & Financial details
+                </h4>
+                <div className="grid grid-cols-3 gap-2 py-1 border-b border-border-custom/20">
+                  <span className="text-text-light font-bold">Bank Name</span>
+                  <span className="col-span-2 text-text-primary">{selectedApp.payoutDetails?.bankName || "N/A"}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 py-1 border-b border-border-custom/20">
+                  <span className="text-text-light font-bold">Account Number</span>
+                  <span className="col-span-2 text-text-primary">{selectedApp.payoutDetails?.accountNumber || "N/A"}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 py-1 border-b border-border-custom/20">
+                  <span className="text-text-light font-bold">Branch Name</span>
+                  <span className="col-span-2 text-text-primary">{selectedApp.payoutDetails?.branch || "N/A"}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 py-1 border-b border-border-custom/20">
+                  <span className="text-text-light font-bold">bKash Number</span>
+                  <span className="col-span-2 text-text-primary">{selectedApp.payoutDetails?.bkashNumber || "N/A"}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 py-1 border-b border-border-custom/20">
+                  <span className="text-text-light font-bold">Nagad Number</span>
+                  <span className="col-span-2 text-text-primary">{selectedApp.payoutDetails?.nagadNumber || "N/A"}</span>
+                </div>
+              </div>
+
               <div className="py-2.5">
                 <span className="text-text-light font-bold block mb-1.5">Verification Credentials</span>
                 {selectedApp.verificationDocUrl ? (

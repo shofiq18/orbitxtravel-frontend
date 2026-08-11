@@ -9,6 +9,7 @@ import {
   Hotel as HotelIcon, 
   MapPin, 
   ArrowLeft, 
+  ArrowRight, 
   ShieldCheck, 
   Loader2, 
   Bed, 
@@ -63,7 +64,7 @@ export default function HotelDetailsPage() {
   const [showAllAmenities, setShowAllAmenities] = useState(false);
 
   // Lightbox Zoom Modal States
-  const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
+  const [activePhotoIdx, setActivePhotoIdx] = useState<number | null>(null);
 
   // Dynamic reviews hooks
   const { data: reviewsResponse } = useGetReviewsQuery(id);
@@ -247,6 +248,8 @@ export default function HotelDetailsPage() {
     hotel.photos?.[4] || "",
   ];
 
+  const allPhotos = defaultImages.filter(Boolean);
+
   const totalGuests = adults + children;
   const guestText = `${totalGuests} guest${totalGuests > 1 ? "s" : ""}` + 
     (infants > 0 ? `, ${infants} infant${infants > 1 ? "s" : ""}` : "");
@@ -303,7 +306,7 @@ export default function HotelDetailsPage() {
             <img
               src={defaultImages[0]}
               alt={`${hotel.name} - Cover`}
-              onClick={() => setFullScreenImage(defaultImages[0])}
+              onClick={() => setActivePhotoIdx(0)}
               className="w-full h-full object-cover hover:scale-[1.03] transition-all duration-500"
             />
           ) : (
@@ -319,7 +322,7 @@ export default function HotelDetailsPage() {
             <img
               src={defaultImages[1]}
               alt={`${hotel.name} - Room 1`}
-              onClick={() => setFullScreenImage(defaultImages[1])}
+              onClick={() => setActivePhotoIdx(1)}
               className="w-full h-full object-cover hover:scale-[1.03] transition-all duration-500"
             />
           ) : (
@@ -335,7 +338,7 @@ export default function HotelDetailsPage() {
             <img
               src={defaultImages[2]}
               alt={`${hotel.name} - Detail 2`}
-              onClick={() => setFullScreenImage(defaultImages[2])}
+              onClick={() => setActivePhotoIdx(2)}
               className="w-full h-full object-cover hover:scale-[1.03] transition-all duration-500"
             />
           ) : (
@@ -351,7 +354,7 @@ export default function HotelDetailsPage() {
             <img
               src={defaultImages[3]}
               alt={`${hotel.name} - View 3`}
-              onClick={() => setFullScreenImage(defaultImages[3])}
+              onClick={() => setActivePhotoIdx(3)}
               className="w-full h-full object-cover hover:scale-[1.03] transition-all duration-500"
             />
           ) : (
@@ -367,7 +370,7 @@ export default function HotelDetailsPage() {
             <img
               src={defaultImages[4]}
               alt={`${hotel.name} - Interior 4`}
-              onClick={() => setFullScreenImage(defaultImages[4])}
+              onClick={() => setActivePhotoIdx(4)}
               className="w-full h-full object-cover hover:scale-[1.03] transition-all duration-500"
             />
           ) : (
@@ -377,7 +380,7 @@ export default function HotelDetailsPage() {
           )}
           {defaultImages[0] && (
             <button
-              onClick={() => setFullScreenImage(defaultImages[0])}
+              onClick={() => setActivePhotoIdx(0)}
               className="absolute bottom-4 right-4 bg-white hover:bg-gray-100 text-black font-semibold text-xs py-2 px-3 shadow-md hover:scale-105 transition-all duration-300 rounded-none flex items-center gap-1.5 border border-gray-300 cursor-pointer"
             >
               <Globe className="h-3.5 w-3.5" />
@@ -667,7 +670,7 @@ export default function HotelDetailsPage() {
                 reviews.slice(0, 6).map((rev: any, idx: number) => (
                   <div key={idx} className="space-y-3">
                     <div className="flex items-center space-x-3.5">
-                      <div className="w-11 h-11 rounded-full bg-[#006CF9]/10 text-[#006CF9] flex items-center justify-center font-bold text-base border border-[#006CF9]/20 shrink-0">
+                      <div className="w-11 h-11 rounded-full bg-theme-primary/10 text-theme-primary flex items-center justify-center font-bold text-base border border-theme-primary/20 shrink-0">
                         {rev.avatar}
                       </div>
                       <div>
@@ -700,7 +703,7 @@ export default function HotelDetailsPage() {
                       <button
                         type="button"
                         onClick={() => toggleExpandReview(rev.id)}
-                        className="text-xs font-bold text-text-primary underline hover:text-[#006CF9] mt-1 block cursor-pointer"
+                        className="text-xs font-bold text-text-primary underline hover:text-theme-primary mt-1 block cursor-pointer"
                       >
                         {expandedReviews[rev.id] ? "Show less" : "Show more"}
                       </button>
@@ -753,7 +756,7 @@ export default function HotelDetailsPage() {
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Share your stay experience details..."
-                  className="w-full bg-bg-primary border border-border-custom p-3 text-xs text-text-primary outline-none focus:border-[#006CF9] h-24 rounded-none resize-none"
+                  className="w-full bg-bg-primary border border-border-custom p-3 text-xs text-text-primary outline-none focus:border-theme-primary h-24 rounded-none resize-none"
                 />
               </div>
 
@@ -1015,7 +1018,7 @@ export default function HotelDetailsPage() {
                 onClick={() => {
                   toast.success("Please select stay dates in Check-in / Checkout to unlock pricing!");
                 }}
-                className="w-full bg-[#E11D48] text-white hover:bg-opacity-95 font-bold py-3 text-xs tracking-wider uppercase transition rounded-none cursor-pointer shadow-md"
+                className="w-full bg-btn-primary text-btn-text-primary hover:bg-opacity-95 font-bold py-3 text-xs tracking-wider uppercase transition rounded-none cursor-pointer shadow-md"
               >
                 Check Availability
               </button>
@@ -1034,7 +1037,7 @@ export default function HotelDetailsPage() {
             ) : (
               <button
                 onClick={handleConfirmLock}
-                className="w-full bg-[#E11D48] text-white hover:bg-opacity-95 font-bold py-3 text-xs tracking-wider uppercase transition rounded-none cursor-pointer shadow-md"
+                className="w-full bg-btn-primary text-btn-text-primary hover:bg-opacity-95 font-bold py-3 text-xs tracking-wider uppercase transition rounded-none cursor-pointer shadow-md"
               >
                 Reserve Stay
               </button>
@@ -1080,7 +1083,7 @@ export default function HotelDetailsPage() {
           {/* Stay Policies card below it */}
           <div className="bg-bg-secondary border border-border-custom p-6 space-y-4 rounded-none">
             <h4 className="font-semibold text-text-primary text-xs uppercase tracking-wider flex items-center space-x-1.5">
-              <Info className="h-4 w-4 text-[#006CF9]" />
+              <Info className="h-4 w-4 text-theme-primary" />
               <span>Stay Policies</span>
             </h4>
             <div className="space-y-3 text-xs text-text-secondary leading-relaxed font-semibold">
@@ -1101,24 +1104,60 @@ export default function HotelDetailsPage() {
       </div>
 
       {/* Lightbox Modal */}
-      {fullScreenImage && (
+      {activePhotoIdx !== null && (
         <div
-          onClick={() => setFullScreenImage(null)}
-          className="fixed inset-0 bg-black/90 z-[999] flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-200"
+          onClick={() => setActivePhotoIdx(null)}
+          className="fixed inset-0 bg-black/95 z-[999] flex items-center justify-center p-4 animate-in fade-in duration-200"
         >
-          <div className="relative max-w-5xl max-h-[90vh] w-full h-full flex items-center justify-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={fullScreenImage}
-              alt="Full screen gallery view"
-              className="max-h-full object-contain shadow-2xl"
-            />
+          {/* Main Modal Wrapper (stops background click closure on content click) */}
+          <div 
+            onClick={(e) => e.stopPropagation()} 
+            className="relative max-w-5xl max-h-[90vh] w-full h-full flex flex-col items-center justify-center"
+          >
+            {/* Close button */}
             <button
-              onClick={() => setFullScreenImage(null)}
-              className="absolute top-4 right-4 text-white bg-black/60 hover:bg-black/85 p-2 rounded-full border border-gray-700 font-extrabold text-sm w-10 h-10 flex items-center justify-center cursor-pointer"
+              onClick={() => setActivePhotoIdx(null)}
+              className="absolute top-4 right-4 z-50 text-white bg-black/60 hover:bg-black/85 p-2 rounded-full border border-gray-700 font-extrabold text-sm w-10 h-10 flex items-center justify-center cursor-pointer"
             >
               ✕
             </button>
+
+            {/* Photo Slide Area */}
+            <div className="relative flex items-center justify-center w-full h-full">
+              {/* Left Navigation Arrow */}
+              {allPhotos.length > 1 && (
+                <button
+                  onClick={() => setActivePhotoIdx(prev => prev === null ? null : (prev === 0 ? allPhotos.length - 1 : prev - 1))}
+                  className="absolute left-4 z-40 bg-black/50 hover:bg-black/80 text-white p-3 rounded-full border border-gray-800 transition cursor-pointer flex items-center justify-center"
+                  aria-label="Previous Photo"
+                >
+                  <ArrowLeft className="h-6.5 w-6.5 text-white" />
+                </button>
+              )}
+
+              {/* Image element */}
+              <img
+                src={allPhotos[activePhotoIdx]}
+                alt={`Full screen view - ${activePhotoIdx + 1}`}
+                className="max-h-[80vh] max-w-full object-contain shadow-2xl transition-all duration-300"
+              />
+
+              {/* Right Navigation Arrow */}
+              {allPhotos.length > 1 && (
+                <button
+                  onClick={() => setActivePhotoIdx(prev => prev === null ? null : (prev === allPhotos.length - 1 ? 0 : prev + 1))}
+                  className="absolute right-4 z-40 bg-black/50 hover:bg-black/80 text-white p-3 rounded-full border border-gray-800 transition cursor-pointer flex items-center justify-center"
+                  aria-label="Next Photo"
+                >
+                  <ArrowRight className="h-6.5 w-6.5 text-white" />
+                </button>
+              )}
+            </div>
+
+            {/* Photo Counter Label */}
+            <div className="absolute bottom-4 bg-black/75 px-4 py-1.5 text-xs text-white font-bold tracking-widest uppercase">
+              Photo {activePhotoIdx + 1} of {allPhotos.length}
+            </div>
           </div>
         </div>
       )}
@@ -1144,7 +1183,7 @@ export default function HotelDetailsPage() {
               {reviews.map((rev: any, idx: number) => (
                 <div key={rev.id || idx} className="space-y-3 pt-2">
                   <div className="flex items-center space-x-3.5">
-                    <div className="w-10 h-10 rounded-full bg-[#006CF9]/10 text-[#006CF9] flex items-center justify-center font-bold text-sm border border-[#006CF9]/20 shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-theme-primary/10 text-theme-primary flex items-center justify-center font-bold text-sm border border-theme-primary/20 shrink-0">
                       {rev.avatar}
                     </div>
                     <div>
