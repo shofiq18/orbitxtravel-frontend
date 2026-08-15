@@ -2,7 +2,7 @@
 
 import { setCredentials } from "@/feature/user/userSlice";
 import { useLogInMutation } from "@/redux/api/auth/authApi";
-import { ArrowRight, Lock, Mail, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Lock, Mail, Eye, EyeOff, Globe } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
@@ -72,27 +72,34 @@ export default function LoginForm() {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center p-4 md:p-6">
-      <div className="w-full max-w-lg bg-bg-primary shadow-none p-6 sm:p-8 md:p-10 rounded-none">
+      <div className="w-full max-w-lg bg-bg-primary shadow-none p-6 sm:p-8 md:p-10 rounded-none text-center">
         
-        {/* Header */}
-        <div className="mb-8 text-left">
-          <h1 className="text-3xl font-semibold text-text-primary tracking-wide">Welcome Back</h1>
-          <p className="mt-2 text-base text-text-secondary">
+        {/* Brand Logo Icon Only */}
+        <div className="flex justify-center mb-6">
+          <Link href="/" className="inline-flex items-center justify-center hover:opacity-90 transition-opacity">
+            <Globe className="h-10 w-10 text-theme-primary" />
+          </Link>
+        </div>
+
+        {/* Header - Centered */}
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-semibold text-text-primary tracking-wide text-center">Welcome Back</h1>
+          <p className="mt-2 text-base text-text-secondary text-center max-w-sm mx-auto">
             Log in to manage your bookings or listing workspaces.
           </p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 text-left">
           {errors.general && (
-            <div className="p-3 text-sm text-red-700 border border-red-200 bg-red-50 rounded-none">
+            <div className="p-3 text-sm text-red-700 border border-red-200 bg-red-50 rounded-none text-left">
               {errors.general}
             </div>
           )}
 
           {/* Email */}
           <div>
-            <label htmlFor="email" className="block mb-2 text-base font-semibold text-text-secondary">
+            <label htmlFor="email" className="block mb-2 text-base font-semibold text-text-secondary text-left">
               Email Address
             </label>
             <div className="relative">
@@ -113,7 +120,7 @@ export default function LoginForm() {
 
           {/* Password */}
           <div>
-            <label htmlFor="password" className="block mb-2 text-base font-semibold text-text-secondary">
+            <label htmlFor="password" className="block mb-2 text-base font-semibold text-text-secondary text-left">
               Password
             </label>
             <div className="relative">

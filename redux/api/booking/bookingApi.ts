@@ -19,6 +19,28 @@ export const bookingApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
+    cancelBooking: builder.mutation({
+      query: (bookingId) => ({
+        url: `/bookings/${bookingId}/cancel`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["User"],
+    }),
+    getPendingPayments: builder.query({
+      query: () => ({
+        url: "/admin/pending-payments",
+        method: "GET",
+      }),
+      providesTags: ["User"],
+    }),
+    verifyPayment: builder.mutation({
+      query: ({ bookingId, body }) => ({
+        url: `/admin/verify-payment/${bookingId}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["User"],
+    }),
     getBookingsByUser: builder.query({
       query: () => ({
         url: "/bookings",
@@ -39,6 +61,9 @@ export const bookingApi = baseApi.injectEndpoints({
 export const {
   useCreateBookingMutation,
   usePayBookingMutation,
+  useCancelBookingMutation,
+  useGetPendingPaymentsQuery,
+  useVerifyPaymentMutation,
   useGetBookingsByUserQuery,
   useGetBookingByIdQuery,
 } = bookingApi;

@@ -18,6 +18,13 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
+    getEscrowBookings: builder.query({
+      query: () => ({
+        url: "/admin/escrow-bookings",
+        method: "GET",
+      }),
+      providesTags: ["User"],
+    }),
     getCommissions: builder.query({
       query: () => ({
         url: "/admin/commissions",
@@ -68,6 +75,7 @@ export const adminApi = baseApi.injectEndpoints({
 export const {
   useGetVendorsQueueQuery,
   useVerifyVendorMutation,
+  useGetEscrowBookingsQuery,
   useGetCommissionsQuery,
   useGetPayoutsQuery,
   useReleasePayoutMutation,

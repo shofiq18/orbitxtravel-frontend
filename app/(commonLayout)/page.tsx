@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGetPackagesQuery } from "@/redux/api/tour/tourApi";
 import { useGetHotelsQuery } from "@/redux/api/hotel/hotelApi";
-import { Compass, MapPin, Calendar, Search, ShieldCheck, Bus, Hotel, UtensilsCrossed, AlertTriangle, Loader2, Clock } from "lucide-react";
+import { useGetReviewsQuery } from "@/redux/api/review/reviewApi";
+import { Compass, MapPin, Calendar, Search, ShieldCheck, Bus, Hotel, UtensilsCrossed, AlertTriangle, Loader2, Clock, Star, Users, Award, Send, CheckCircle2, Ticket, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { toast } from "react-hot-toast";
+import Marquee from "react-fast-marquee";
 
 export default function Home() {
   // Search state variables
@@ -31,6 +34,29 @@ export default function Home() {
 
   const { data: hotelsResponse, isLoading: isLoadingHotels, error: hotelsError } = useGetHotelsQuery(hotelFilters);
   const hotelsList = hotelsResponse?.data || [];
+
+  const { data: reviewsResponse } = useGetReviewsQuery(undefined);
+  const reviewsList = reviewsResponse?.data || [];
+
+  const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
+  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
+
+  useEffect(() => {
+    if (!reviewsList || reviewsList.length === 0 || isCarouselPaused) return;
+    const timer = setInterval(() => {
+      setCurrentReviewIndex((prev) => (prev + 1) % reviewsList.length);
+    }, 3500);
+    return () => clearInterval(timer);
+  }, [reviewsList, isCarouselPaused]);
+
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+
+  const handleNewsletterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail) return;
+    toast.success("Thank you for subscribing to OrbitX Travel newsletter!");
+    setNewsletterEmail("");
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -468,6 +494,209 @@ export default function Home() {
           })}
         </div>
       </section>
+
+      {/* Why Choose OrbitX Travel Section */}
+      <section className="w-full mx-auto px-8 lg:px-16 mt-20 pt-8 border-t border-border-custom">
+        <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
+          <span className="text-xs uppercase font-bold tracking-widest text-theme-primary">The OrbitX Advantage</span>
+          <h3 className="text-3xl font-bold text-text-primary tracking-wide">Why Travel With OrbitX?</h3>
+          <p className="text-sm text-text-secondary">We bridge local tour hosts and luxury stays with zero booking markup fees.</p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="border border-border-custom bg-bg-primary p-6 space-y-3 rounded-none text-left">
+            <div className="w-12 h-12 bg-theme-primary/10 text-theme-primary flex items-center justify-center">
+              <Ticket className="h-6 w-6" />
+            </div>
+            <h4 className="text-lg font-bold text-text-primary">Zero Hidden Fees</h4>
+            <p className="text-xs text-text-secondary leading-relaxed">
+              Pay minimum seat lock deposits or direct hotel stay rates with 100% price transparency.
+            </p>
+          </div>
+
+          <div className="border border-border-custom bg-bg-primary p-6 space-y-3 rounded-none text-left">
+            <div className="w-12 h-12 bg-theme-primary/10 text-theme-primary flex items-center justify-center">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <h4 className="text-lg font-bold text-text-primary">Verified Vendors</h4>
+            <p className="text-xs text-text-secondary leading-relaxed">
+              Every hotel owner and tour organizer is manually vetted with trade license and NID checks.
+            </p>
+          </div>
+
+          <div className="border border-border-custom bg-bg-primary p-6 space-y-3 rounded-none text-left">
+            <div className="w-12 h-12 bg-theme-primary/10 text-theme-primary flex items-center justify-center">
+              <CheckCircle2 className="h-6 w-6" />
+            </div>
+            <h4 className="text-lg font-bold text-text-primary">Instant PDF Vouchers</h4>
+            <p className="text-xs text-text-secondary leading-relaxed">
+              Automated PDF voucher generation with reference IDs and host contact guide info.
+            </p>
+          </div>
+
+          <div className="border border-border-custom bg-bg-primary p-6 space-y-3 rounded-none text-left">
+            <div className="w-12 h-12 bg-theme-primary/10 text-theme-primary flex items-center justify-center">
+              <Clock className="h-6 w-6" />
+            </div>
+            <h4 className="text-lg font-bold text-text-primary">24/7 Departure Alerts</h4>
+            <p className="text-xs text-text-secondary leading-relaxed">
+              Automated pre-trip email reminders dispatched 24 hours prior to package departure.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust & Impact Stats Counter Banner */}
+      <section className="w-full bg-bg-secondary border-y border-border-custom py-12 my-16">
+        <div className="max-w-6xl mx-auto px-8 lg:px-16 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          <div className="space-y-1">
+            <p className="text-3xl sm:text-4xl font-extrabold text-theme-primary tracking-tight">10,000+</p>
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Happy Travelers</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-3xl sm:text-4xl font-extrabold text-theme-primary tracking-tight">500+</p>
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Verified Stays & Tours</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-3xl sm:text-4xl font-extrabold text-theme-primary tracking-tight">99.8%</p>
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">On-Time Departures</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-3xl sm:text-4xl font-extrabold text-theme-primary tracking-tight">4.9 / 5</p>
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Customer Satisfaction</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Traveler Testimonials Section - react-fast-marquee */}
+      <section className="w-full bg-bg-primary text-text-primary py-16 my-16 overflow-hidden border-y border-border-custom">
+        <div className="text-center max-w-2xl mx-auto mb-12 space-y-2 px-8">
+          <span className="text-xs uppercase font-bold tracking-widest text-theme-primary">Real Traveler Experiences</span>
+          <h3 className="text-3xl font-bold text-text-primary tracking-wide">What Travelers Say</h3>
+          <p className="text-sm text-text-secondary">Authentic reviews from verified travelers who booked seat locks and hotel stays on OrbitX.</p>
+        </div>
+
+        {/* 2-Row React Fast Marquee Container */}
+        <div className="space-y-6 w-full">
+          
+          {/* Row 1: Scrolling Left */}
+          <Marquee speed={60} pauseOnHover={true} gradient={false} className="py-2">
+            {reviewsList.map((rev: any, idx: number) => {
+              const ratingValue = rev.rating || 5;
+              return (
+                <div key={`r1-${idx}`} className="px-5 py-2">
+                  <div className="w-[360px] sm:w-[420px] h-[250px] bg-bg-secondary border border-border-custom hover:border-theme-primary hover:shadow-md p-6 rounded-none text-left flex flex-col justify-between shrink-0 transition-all cursor-pointer">
+                    <div className="space-y-3">
+                      {/* Star Rating Display */}
+                      <div className="flex items-center space-x-1 text-amber-500">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star key={s} className={`h-4 w-4 ${s <= ratingValue ? "fill-amber-500 stroke-amber-500" : "text-gray-300"}`} />
+                        ))}
+                        <span className="text-xs font-bold text-text-secondary ml-1.5">{ratingValue.toFixed(1)} / 5.0</span>
+                      </div>
+
+                      {/* Quote Text */}
+                      <p className="text-sm text-text-secondary leading-relaxed italic font-normal line-clamp-3">
+                        &ldquo;{rev.comment}&rdquo;
+                      </p>
+                    </div>
+
+                    {/* Bottom Author Row */}
+                    <div className="flex items-center space-x-2 pt-3 border-t border-border-custom">
+                      <img
+                        src={rev.avatar?.startsWith("http") ? rev.avatar : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"}
+                        alt={rev.name}
+                        className="w-8 h-8 rounded-full object-cover border border-border-custom"
+                      />
+                      <div>
+                        <p className="text-sm font-bold text-text-primary">{rev.name}</p>
+                        <p className="text-[10px] font-bold text-theme-primary tracking-wider uppercase mt-0.5">
+                          {rev.hotel?.address ? rev.hotel.address.toUpperCase() : "DHAKA — JANUARY 2026"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </Marquee>
+
+          {/* Row 2: Scrolling Right */}
+          <Marquee speed={60} direction="right" pauseOnHover={true} gradient={false} className="py-2">
+            {[...reviewsList].reverse().map((rev: any, idx: number) => {
+              const ratingValue = rev.rating || 5;
+              return (
+                <div key={`r2-${idx}`} className="px-5 py-2">
+                  <div className="w-[360px] sm:w-[420px] h-[250px] bg-bg-secondary border border-border-custom hover:border-theme-primary hover:shadow-md p-6 rounded-none text-left flex flex-col justify-between shrink-0 transition-all cursor-pointer">
+                    <div className="space-y-3">
+                      {/* Star Rating Display */}
+                      <div className="flex items-center space-x-1 text-amber-500">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star key={s} className={`h-4 w-4 ${s <= ratingValue ? "fill-amber-500 stroke-amber-500" : "text-gray-300"}`} />
+                        ))}
+                        <span className="text-xs font-bold text-text-secondary ml-1.5">{ratingValue.toFixed(1)} / 5.0</span>
+                      </div>
+
+                      {/* Quote Text */}
+                      <p className="text-sm text-text-secondary leading-relaxed italic font-normal line-clamp-3">
+                        &ldquo;{rev.comment}&rdquo;
+                      </p>
+                    </div>
+
+                    {/* Bottom Author Row */}
+                    <div className="flex items-center space-x-3 pt-3 border-t border-border-custom">
+                      <img
+                        src={rev.avatar?.startsWith("http") ? rev.avatar : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"}
+                        alt={rev.name}
+                        className="w-10 h-10 rounded-full object-cover border border-border-custom"
+                      />
+                      <div>
+                        <p className="text-sm font-bold text-text-primary">{rev.name}</p>
+                        <p className="text-[10px] font-bold text-theme-primary tracking-wider uppercase mt-0.5">
+                          {rev.hotel?.name ? rev.hotel.name.toUpperCase() : "SYLHET — 2026"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </Marquee>
+
+        </div>
+      </section>
+
+      {/* Newsletter Subscription CTA Section */}
+      <section className="w-full mx-auto px-8 lg:px-16 my-20">
+        <div className="border border-border-custom bg-bg-secondary p-8 sm:p-12 text-center space-y-4 rounded-none max-w-4xl mx-auto">
+          <span className="text-xs font-bold uppercase tracking-widest text-theme-primary">Stay Connected</span>
+          <h3 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-wide">
+            Subscribe for Exclusive Travel Deals
+          </h3>
+          <p className="text-sm text-text-secondary max-w-lg mx-auto leading-relaxed">
+            Get instant email alerts when new verified tour packages or hotel stay discounts drop on OrbitX Travel.
+          </p>
+
+          <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto pt-2">
+            <input
+              type="email"
+              value={newsletterEmail}
+              onChange={(e) => setNewsletterEmail(e.target.value)}
+              placeholder="Enter your email address..."
+              required
+              className="w-full py-3.5 px-4 text-sm text-text-primary bg-bg-primary border border-border-custom outline-none focus:border-theme-primary transition-all rounded-none"
+            />
+            <button
+              type="submit"
+              className="w-full sm:w-auto bg-btn-primary text-btn-text-primary text-xs font-bold py-3.5 px-6 flex items-center justify-center space-x-2 border border-transparent hover:opacity-90 transition-all rounded-none shrink-0 cursor-pointer"
+            >
+              <span>Subscribe</span>
+              <Send className="h-4 w-4" />
+            </button>
+          </form>
+        </div>
+      </section>
+
     </div>
   );
 }

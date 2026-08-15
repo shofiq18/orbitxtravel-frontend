@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useGetPackageByIdQuery } from "@/redux/api/tour/tourApi";
 import { useGetHotelByIdQuery } from "@/redux/api/hotel/hotelApi";
 import { useCreateBookingMutation, usePayBookingMutation } from "@/redux/api/booking/bookingApi";
-import { Loader2, CheckCircle2, AlertTriangle, ShieldCheck, CreditCard, ChevronRight, FileDown, Lock, Calendar, Bed, User } from "lucide-react";
+import { Loader2, CheckCircle2, AlertTriangle, FileDown, Lock, Calendar, Bed, User, Copy, Check, ShoppingCart, Clock, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 
@@ -42,13 +42,18 @@ export default function CheckoutPage() {
   const [createBookingApi, { isLoading: isCreating }] = useCreateBookingMutation();
   const [payBookingApi, { isLoading: isPaying }] = usePayBookingMutation();
 
-  // Payment UI states
-  const [checkoutStep, setCheckoutStep] = useState<"summary" | "pay_simulate" | "success">("summary");
-  const [paymentMethod, setPaymentMethod] = useState<"bkash" | "nagad">("bkash");
-  const [walletNumber, setWalletNumber] = useState("01700000000");
-  const [pin, setPin] = useState("1234");
-  
-  // Success receipt states
+  // Payment UI states (bKash is the single active payment method)
+  const [senderNumber, setSenderNumber] = useState("");
+  const [transactionId, setTransactionId] = useState("");
+  const [copiedNumber, setCopiedNumber] = useState<string | null>(null);
+
+  // Official OrbitX Payment Receiver Number
+  const BKASH_NUMBER = "+8801929654718";
+
+  // Step state
+  const [checkoutStep, setCheckoutStep] = useState<"form" | "success">("form");
+
+  // Success receipt state
   const [completedBooking, setCompletedBooking] = useState<{
     id: string;
     paymentTxnId: string;
@@ -57,11 +62,15 @@ export default function CheckoutPage() {
     bookingStatus: string;
   } | null>(null);
 
-  useEffect(() => {
-    if (walletNumber === "") {
-      setWalletNumber(paymentMethod === "bkash" ? "01700000000" : "01800000000");
+  const handleCopyNumber = (num: string) => {
+    const cleanNum = num.replace(/[^0-9]/g, "");
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(cleanNum);
     }
-  }, [paymentMethod, walletNumber]);
+    setCopiedNumber(num);
+    toast.success(`Number ${num} copied to clipboard!`);
+    setTimeout(() => setCopiedNumber(null), 2500);
+  };
 
   const isLoading = isHotel ? isLoadingHotel : isLoadingPackage;
   const isError = isHotel ? (hotelError || !hotel) : (packageError || !pkg);
@@ -113,70 +122,54 @@ export default function CheckoutPage() {
     ? (selectedRoom?.b2cPrice || 0) * nights * quantity
     : seats * (pkg?.totalPackagePrice || 0);
 
-  const handleStartPayment = (method: "bkash" | "nagad") => {
-    setPaymentMethod(method);
-    setWalletNumber(method === "bkash" ? "01700000000" : "01800000000");
-    setCheckoutStep("pay_simulate");
-  };
-
-  const handleProcessCheckout = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleProcessCheckout = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     
-    if (!walletNumber || !pin) {
-      toast.error("Please enter your wallet account number and PIN code.");
+    if (!senderNumber || !transactionId) {
+      toast.error("Please provide your sender bKash mobile number and Transaction ID.");
       return;
     }
 
-    if (isHotel) {
-      try {
-        toast.loading("Initiating stay reservation lock...", { id: "checkout" });
-        const bookingRes = await createBookingApi({
-          hotelId,
-          roomId,
-          roomQuantity: quantity,
-          checkInDate: checkIn,
-          checkOutDate: checkOut,
-        }).unwrap();
+    try {
+      toast.loading("Creating booking record...", { id: "checkout" });
 
-        const bookingId = bookingRes.data.id;
+      // 1. Create booking payload
+      const bookingPayload = isHotel
+        ? {
+            hotelId,
+            roomId,
+            roomQuantity: quantity,
+            checkInDate: checkIn,
+            checkOutDate: checkOut,
+          }
+        : {
+            packageId,
+            seatsBooked: seats,
+          };
 
-        toast.loading("Authenticating secure sandbox payment...", { id: "checkout" });
-        const paymentRes = await payBookingApi({
-          bookingId,
-          body: { paymentMethod },
-        }).unwrap();
+      const bookingRes = await createBookingApi(bookingPayload).unwrap();
+      const bookingId = bookingRes.data.id;
 
-        toast.success("Stay booked & locked successfully!", { id: "checkout" });
-        
-        setCompletedBooking(paymentRes.data);
-        setCheckoutStep("success");
-      } catch (error: any) {
-        toast.error(error?.data?.message || "Failed to process checkout stays transaction.", { id: "checkout" });
-      }
-    } else {
-      // Live tour package booking workflow
-      try {
-        toast.loading("Initiating seat lock booking...", { id: "checkout" });
-        const bookingRes = await createBookingApi({
-          packageId,
-          seatsBooked: seats,
-        }).unwrap();
+      // 2. Submit payment information for Admin Verification
+      toast.loading("Submitting bKash payment reference for Admin Verification...", { id: "checkout" });
 
-        const bookingId = bookingRes.data.id;
+      const payBody = {
+        paymentMethod: "bkash",
+        senderNumber,
+        transactionId,
+      };
 
-        toast.loading("Authenticating secure sandbox payment...", { id: "checkout" });
-        const paymentRes = await payBookingApi({
-          bookingId,
-          body: { paymentMethod },
-        }).unwrap();
+      const paymentRes = await payBookingApi({
+        bookingId,
+        body: payBody,
+      }).unwrap();
 
-        toast.success("Payment checkout completed successfully!", { id: "checkout" });
-        
-        setCompletedBooking(paymentRes.data);
-        setCheckoutStep("success");
-      } catch (error: any) {
-        toast.error(error?.data?.message || "Failed to process checkout transaction.", { id: "checkout" });
-      }
+      toast.success("Payment reference submitted! Pending Admin Verification.", { id: "checkout" });
+      
+      setCompletedBooking(paymentRes.data);
+      setCheckoutStep("success");
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to process booking checkout.", { id: "checkout" });
     }
   };
 
@@ -188,240 +181,262 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="w-full mx-auto px-8 lg:px-16 py-12 min-h-[80vh]">
+    <div className="w-full mx-auto px-4 sm:px-8 lg:px-12 py-10 min-h-[80vh]">
       
       {/* Title */}
-      <div className="mb-10 text-center max-w-xl mx-auto print:hidden">
-        <h1 className="text-3xl font-semibold text-text-primary tracking-wide">Checkout Secure Gateway</h1>
+      <div className="mb-8 text-center max-w-xl mx-auto print:hidden">
+        <h1 className="text-3xl font-semibold text-text-primary tracking-wide">Checkout & Payment</h1>
         <p className="mt-2 text-sm text-text-secondary">
           {isHotel ? "Secure your hotel room stay reservation." : "Lock in your booking seats deposit."}
         </p>
       </div>
 
-      <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-5 gap-8 print:block print:max-w-xl print-receipt-container">
+      {/* 3/2 Grid Split Ratio: Left md:col-span-3, Right md:col-span-2 */}
+      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-5 gap-8 print:block print:max-w-xl print-receipt-container">
         
-        {/* Left Side: Steps / Payment Simulator Forms */}
+        {/* Left Side (3/5 Ratio): Authentic bKash Payment Card */}
         <div className="md:col-span-3 space-y-6 print:w-full">
           
-          {checkoutStep === "summary" && (
-            <div className="border border-border-custom bg-bg-primary p-6 space-y-6 rounded-none">
-              <h3 className="text-base font-semibold text-text-primary tracking-wide border-b border-border-custom pb-2">
-                Select Payment Method
-              </h3>
+          {checkoutStep === "form" && (
+            <div className="space-y-4">
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
-                {/* bKash Selection */}
-                <button
-                  type="button"
-                  onClick={() => handleStartPayment("bkash")}
-                  className="flex flex-col items-center justify-center p-6 border border-border-custom hover:border-theme-primary bg-bg-secondary/40 hover:bg-bg-secondary transition rounded-none cursor-pointer group"
-                >
-                  <div className="text-xl font-black text-[#e2136e] group-hover:scale-105 transition-transform duration-300">
-                    bKash Checkout
+              {/* AUTHENTIC BKASH CARD WITH EXACT BKASH PAYMENT PILL HEADER */}
+              <div 
+                onClick={(e) => e.stopPropagation()} 
+                className="border border-gray-200 bg-white overflow-hidden text-left animate-in fade-in duration-300 shadow-xl rounded-2xl"
+              >
+                {/* Top Header Banner: Exact bKash Payment Pill Matching Screenshot */}
+                <div className="bg-white pt-5 pb-4 px-6 text-center border-b border-gray-200 flex items-center justify-center">
+                  <div className="inline-flex items-center space-x-2 border border-[#e2136e] px-7 py-1.5 rounded-full bg-white shadow-xs">
+                    <span className="text-2xl font-black tracking-tight">
+                      <span className="text-[#e2136e]">b</span>
+                      <span className="text-gray-900">Kash</span>
+                    </span>
+                    <img 
+                      src="/bkash-logo-mobile-banking-app-icon-transparent-background-free-png.webp" 
+                      alt="bKash Origami Bird"
+                      className="h-7 w-auto object-contain inline-block shrink-0"
+                    />
+                    <span className="text-xl font-semibold text-[#e2136e] tracking-tight">Payment</span>
                   </div>
-                  <span className="text-[10px] text-text-light font-bold mt-2">MFS Instant Pay</span>
-                </button>
- 
-                {/* Nagad Selection */}
-                <button
-                  type="button"
-                  onClick={() => handleStartPayment("nagad")}
-                  className="flex flex-col items-center justify-center p-6 border border-border-custom hover:border-theme-primary bg-bg-secondary/40 hover:bg-bg-secondary transition rounded-none cursor-pointer group"
-                >
-                  <div className="text-xl font-black text-[#f15a22] group-hover:scale-105 transition-transform duration-300">
-                    Nagad Checkout
+                </div>
+
+                {/* Merchant & Amount Info Bar */}
+                <div className="bg-[#f8f9fa] px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-700 shadow-xs">
+                      <ShoppingCart className="h-5 w-5 text-gray-600" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900 leading-tight">OrbitX Travel Official</h4>
+                      <span className="text-[11px] text-gray-500 font-semibold">{isHotel ? "Hotel Stay Reservation" : "Seats Lock Deposit"}</span>
+                    </div>
                   </div>
-                  <span className="text-[10px] text-text-light font-bold mt-2">MFS Instant Pay</span>
-                </button>
- 
+                  <div className="text-right">
+                    <span className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">৳{totalDepositDue.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                {/* Main bKash Pink Body */}
+                <div className="bg-[#e2136e] p-6 space-y-6 text-white">
+                  
+                  {/* Send Money Number Box */}
+                  <div className="border border-white/30 bg-white/10 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 backdrop-blur-xs">
+                    <div>
+                      <span className="text-[10px] font-extrabold text-white/90 uppercase tracking-wider block">
+                        SEND MONEY (PERSONAL NUMBER)
+                      </span>
+                      <div className="text-xl sm:text-2xl font-mono font-black text-white tracking-widest mt-0.5">
+                        {BKASH_NUMBER}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyNumber(BKASH_NUMBER)}
+                      className="px-4 py-2 bg-white text-[#e2136e] text-xs font-bold rounded-full hover:bg-gray-100 transition flex items-center space-x-1.5 shrink-0 shadow-sm cursor-pointer"
+                    >
+                      {copiedNumber === BKASH_NUMBER ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      <span>{copiedNumber === BKASH_NUMBER ? "Copied!" : "Copy Number"}</span>
+                    </button>
+                  </div>
+
+                  {/* Input 1: Your bKash Account number */}
+                  <div className="space-y-1.5 text-center">
+                    <label className="block text-xs font-bold text-white tracking-wide">
+                      Your bKash Account number
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={senderNumber}
+                      onChange={(e) => setSenderNumber(e.target.value)}
+                      placeholder="e.g 01XXXXXXXXX"
+                      className="w-full px-4 py-3 text-center text-sm font-bold text-gray-800 bg-white outline-none rounded-xl placeholder:text-gray-400 placeholder:font-bold font-mono shadow-inner border-0"
+                    />
+                  </div>
+
+                  {/* Input 2: Transaction ID (TrxID) */}
+                  <div className="space-y-1.5 text-center">
+                    <label className="block text-xs font-bold text-white tracking-wide">
+                      Transaction ID (TrxID)
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={transactionId}
+                      onChange={(e) => setTransactionId(e.target.value.toUpperCase())}
+                      placeholder="E.G. 8K2HJX9..."
+                      className="w-full px-4 py-3 text-center text-sm font-bold text-gray-800 bg-white uppercase outline-none rounded-xl placeholder:text-gray-400 placeholder:font-bold font-mono shadow-inner border-0"
+                    />
+                  </div>
+
+                  {/* Verification Note Box */}
+                  <div className="bg-[#111625] text-white p-4 rounded-xl flex items-start space-x-3 text-xs border border-white/10 shadow-sm">
+                    <Clock className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1 font-medium text-left">
+                      <p className="text-gray-200 leading-snug">* Verification is manual and typically takes 1-4 hours during business hours.</p>
+                      <p className="text-amber-400 font-semibold leading-snug">* Keep your Transaction ID (TrxID) safe after sending payment.</p>
+                    </div>
+                  </div>
+
+                  {/* Terms Subtext */}
+                  <p className="text-[10px] text-white/80 text-center font-medium">
+                    By clicking on Confirm, you are agreeing to the{" "}
+                    <Link href="/terms" target="_blank" className="underline font-bold text-white hover:text-gray-200">
+                      terms & conditions
+                    </Link>
+                  </p>
+
+                </div>
+
+                {/* Bottom Split Action Bar with Light Gray Border Top */}
+                <div className="grid grid-cols-2 text-center border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSenderNumber("");
+                      setTransactionId("");
+                    }}
+                    className="py-3.5 bg-[#d1d5db] text-gray-800 font-black text-sm uppercase tracking-wider hover:bg-gray-300 transition cursor-pointer"
+                  >
+                    CLOSE
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleProcessCheckout()}
+                    disabled={isCreating || isPaying || !senderNumber || !transactionId}
+                    className="py-3.5 bg-[#e2136e] text-white font-black text-sm uppercase tracking-wider hover:bg-[#c90e60] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 cursor-pointer"
+                  >
+                    {(isCreating || isPaying) ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>SUBMITTING...</span>
+                      </>
+                    ) : (
+                      <span>CONFIRM</span>
+                    )}
+                  </button>
+                </div>
+
               </div>
-              
-              <p className="text-[10px] text-text-light text-center">
-                Transactions are secured under the OrbitX Travel checkout encryption guidelines.
+
+              <p className="text-[10px] text-text-light text-center pt-2">
+                All booking submissions are logged and protected under OrbitX Travel encryption policies.
               </p>
             </div>
           )}
 
-          {checkoutStep === "pay_simulate" && (
-            <form onSubmit={handleProcessCheckout} className="border border-border-custom bg-bg-primary p-6 space-y-6 rounded-none animate-in fade-in duration-200">
-              
-              {/* Payment Branding Banner */}
-              <div className={`p-4 text-center font-bold text-white text-lg rounded-none ${ paymentMethod === "bkash" ? "bg-[#e2136e]" : "bg-[#f15a22]" }`}>
-                {paymentMethod.toUpperCase() } SANDBOX GATEWAY
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-text-secondary mb-1.5">
-                    {paymentMethod.toUpperCase()} Account Number
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={walletNumber}
-                    onChange={(e) => setWalletNumber(e.target.value)}
-                    placeholder="e.g. 01700000000"
-                    className="w-full px-3 py-2 text-sm text-text-primary bg-bg-secondary border border-border-custom outline-none focus:border-theme-primary rounded-none font-mono font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-text-secondary mb-1.5">
-                    4-Digit Secret PIN
-                  </label>
-                  <input
-                    type="password"
-                    maxLength={4}
-                    required
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value)}
-                    placeholder="••••"
-                    className="w-full px-3 py-2 text-sm text-text-primary bg-bg-secondary border border-border-custom outline-none focus:border-theme-primary rounded-none font-mono font-bold"
-                  />
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="pt-4 border-t border-border-custom flex items-center justify-between gap-4">
-                <button
-                  type="button"
-                  onClick={() => setCheckoutStep("summary")}
-                  className="px-5 py-2.5 bg-bg-secondary border border-border-custom text-text-secondary font-bold text-xs rounded-none hover:bg-opacity-80 transition cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isCreating || isPaying}
-                  className="px-6 py-2.5 bg-btn-primary text-btn-text-primary font-bold text-xs rounded-none hover:bg-opacity-95 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 cursor-pointer"
-                >
-                  {(isCreating || isPaying) ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Confirming...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Pay BDT {totalDepositDue}</span>
-                      <ChevronRight className="h-4 w-4" />
-                    </>
-                  )}
-                </button>
-              </div>
-
-            </form>
-          )}
-
           {checkoutStep === "success" && completedBooking && (
-            <div className="border border-border-custom bg-bg-primary p-8 space-y-6 print:p-4 print:space-y-3 text-center rounded-none animate-in zoom-in-95 duration-300">
+            <div className="border border-gray-200 bg-bg-primary p-8 space-y-6 print:p-4 print:space-y-3 text-center rounded-2xl animate-in zoom-in-95 duration-300">
               
-              {/* Print-Only Brand Header */}
-              <div className="hidden print:block text-center border-b border-border-custom pb-4 mb-4">
-                <h2 className="text-2xl font-black text-theme-primary tracking-widest uppercase font-title">
-                  OrbitX Travel
-                </h2>
-                <p className="text-[9px] text-text-light font-bold uppercase tracking-wider mt-1">
-                  Stay Booking Confirmation Voucher
+              {/* Verification Status Icon */}
+              <div className="flex justify-center">
+                <div className="p-4 bg-amber-100/80 rounded-full border border-amber-300">
+                  <Clock className="h-12 w-12 text-amber-600 animate-pulse" />
+                </div>
+              </div>
+              
+              <div className="space-y-2 max-w-md mx-auto">
+                <span className="inline-block bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1 text-[10px] font-extrabold rounded-full uppercase tracking-wider">
+                  PAYMENT VERIFICATION PENDING
+                </span>
+                <h3 className="text-xl font-bold text-text-primary">Payment Submitted for Verification</h3>
+                <p className="text-xs text-text-light font-mono">Booking Ref ID: {completedBooking.id}</p>
+                <p className="text-xs text-gray-600 bg-amber-50 p-3 rounded-xl border border-amber-200 text-left leading-relaxed">
+                  * Admin is reviewing your bKash payment reference. Verification typically takes <strong>1-4 hours</strong> during business hours. Once verified, your status will change to <strong>CONFIRMED</strong> and your PDF voucher will be issued.
                 </p>
               </div>
-              <div className="flex justify-center">
-                <CheckCircle2 className="h-14 w-14 text-emerald-500" />
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="text-xl font-bold text-text-primary">Payment Confirmed</h3>
-                <p className="text-xs text-text-light font-mono">Receipt ID: {completedBooking.id}</p>
-              </div>
 
-              <div className="bg-bg-secondary border border-border-custom p-6 print:p-3 text-left space-y-3.5 print:space-y-2 max-w-md mx-auto text-xs text-text-secondary font-semibold">
+              <div className="bg-bg-secondary border border-gray-200 p-6 print:p-3 text-left space-y-3.5 print:space-y-2 max-w-md mx-auto text-xs text-text-secondary font-semibold rounded-xl">
                 {isHotel ? (
                   <>
-                    <div className="flex justify-between border-b border-border-custom pb-2">
+                    <div className="flex justify-between border-b border-gray-200 pb-2">
                       <span>Hotel Property:</span>
                       <span className="text-text-primary">{hotel?.name}</span>
                     </div>
-                    <div className="flex justify-between border-b border-border-custom pb-2">
+                    <div className="flex justify-between border-b border-gray-200 pb-2">
                       <span>Room Type:</span>
                       <span className="text-text-primary">{selectedRoom?.type}</span>
                     </div>
-                    <div className="flex justify-between border-b border-border-custom pb-2">
+                    <div className="flex justify-between border-b border-gray-200 pb-2">
                       <span>Room Quantity:</span>
                       <span className="text-text-primary">{quantity} Room(s)</span>
                     </div>
-                    <div className="flex justify-between border-b border-border-custom pb-2">
+                    <div className="flex justify-between border-b border-gray-200 pb-2">
                       <span>Stay Duration:</span>
                       <span className="text-text-primary">{nights} Night(s)</span>
                     </div>
-                    <div className="flex justify-between border-b border-border-custom pb-2">
+                    <div className="flex justify-between border-b border-gray-200 pb-2">
                       <span>Check-in Date:</span>
                       <span className="text-text-primary">{checkIn}</span>
                     </div>
-                    <div className="flex justify-between border-b border-border-custom pb-2">
+                    <div className="flex justify-between border-b border-gray-200 pb-2">
                       <span>Checkout Date:</span>
                       <span className="text-text-primary">{checkOut}</span>
                     </div>
-                    <div className="flex justify-between border-b border-border-custom pb-2">
+                    <div className="flex justify-between border-b border-gray-200 pb-2">
                       <span>Guests Count:</span>
                       <span className="text-text-primary">{adults} Adult(s), {children} Child(ren)</span>
                     </div>
                   </>
                 ) : (
                   <>
-                    <div className="flex justify-between border-b border-border-custom pb-2">
+                    <div className="flex justify-between border-b border-gray-200 pb-2">
                       <span>Tour Package:</span>
                       <span className="text-text-primary">{pkg?.title}</span>
                     </div>
-                    <div className="flex justify-between border-b border-border-custom pb-2">
+                    <div className="flex justify-between border-b border-gray-200 pb-2">
                       <span>Destination:</span>
                       <span className="text-text-primary">{pkg?.destination}</span>
                     </div>
-                    <div className="flex justify-between border-b border-border-custom pb-2">
+                    <div className="flex justify-between border-b border-gray-200 pb-2">
                       <span>Seats Booked:</span>
                       <span className="text-text-primary">{seats} Seat(s)</span>
                     </div>
                   </>
                 )}
-                <div className="flex justify-between border-b border-border-custom pb-2 text-theme-secondary font-bold">
-                  <span>Amount Paid via {paymentMethod.toUpperCase()}:</span>
+                <div className="flex justify-between border-b border-gray-200 pb-2 text-[#e2136e] font-bold">
+                  <span>Amount Submitted via BKASH:</span>
                   <span>BDT {completedBooking.paidAmount.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-text-light font-mono text-[10px]">
-                  <span>Txn ID:</span>
-                  <span>{completedBooking.paymentTxnId}</span>
+                  <span>Payment Ref / TrxID:</span>
+                  <span className="font-bold text-text-primary">{completedBooking.paymentTxnId}</span>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 print-receipt-buttons">
-                {!isHotel && completedBooking.voucherUrl && (
-                  <a
-                    href={getAbsoluteVoucherUrl(completedBooking.voucherUrl)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full sm:w-auto bg-theme-primary text-white font-bold py-2.5 px-6 text-xs rounded-none hover:bg-opacity-95 transition flex items-center justify-center space-x-2"
-                  >
-                    <FileDown className="h-4 w-4" />
-                    <span>Download PDF Voucher</span>
-                  </a>
-                )}
-                {isHotel && (
-                  <button
-                    onClick={() => {
-                      if (typeof window !== "undefined") {
-                        window.print();
-                      }
-                    }}
-                    className="w-full sm:w-auto bg-theme-primary text-white font-bold py-2.5 px-6 text-xs rounded-none hover:bg-opacity-95 transition flex items-center justify-center space-x-2 cursor-pointer"
-                  >
-                    <FileDown className="h-4 w-4" />
-                    <span>Print Stay Confirmation</span>
-                  </button>
-                )}
+                <Link
+                  href="/dashboard/profile"
+                  className="w-full sm:w-auto bg-theme-primary text-white font-bold py-2.5 px-6 text-xs rounded-xl hover:bg-opacity-95 transition text-center"
+                >
+                  View My Bookings Status
+                </Link>
                 <Link
                   href="/"
-                  className="w-full sm:w-auto bg-bg-secondary border border-border-custom text-text-secondary font-bold py-2.5 px-6 text-xs rounded-none hover:bg-opacity-80 transition text-center"
+                  className="w-full sm:w-auto bg-bg-secondary border border-gray-200 text-text-secondary font-bold py-2.5 px-6 text-xs rounded-xl hover:bg-opacity-80 transition text-center"
                 >
-                  Back to Portal
+                  Back to Home
                 </Link>
               </div>
 
@@ -430,10 +445,10 @@ export default function CheckoutPage() {
 
         </div>
 
-        {/* Right Side: Order summary layout */}
+        {/* Right Side (2/5 Ratio): Order Summary Layout */}
         <div className="md:col-span-2 space-y-6">
-          <div className="border border-border-custom bg-bg-primary p-6 space-y-6 rounded-none">
-            <h3 className="text-base font-semibold text-text-primary tracking-wide border-b border-border-custom pb-2">
+          <div className="border border-gray-200 bg-bg-primary p-6 space-y-6 rounded-2xl shadow-xs">
+            <h3 className="text-base font-semibold text-text-primary tracking-wide border-b border-gray-200 pb-2">
               Order Summary
             </h3>
             
@@ -445,7 +460,7 @@ export default function CheckoutPage() {
                   <p className="text-[11px] text-text-light">{hotel?.address}</p>
                 </div>
                 
-                <div className="border-t border-border-custom pt-4 space-y-2.5 text-xs text-text-secondary font-semibold">
+                <div className="border-t border-gray-200 pt-4 space-y-2.5 text-xs text-text-secondary font-semibold">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center space-x-1.5">
                       <Bed className="h-4 w-4 text-theme-primary" />
@@ -477,7 +492,7 @@ export default function CheckoutPage() {
                   <p className="text-[11px] text-text-light">{pkg?.destination}</p>
                 </div>
                 
-                <div className="border-t border-border-custom pt-4 space-y-2.5 text-xs text-text-secondary font-semibold">
+                <div className="border-t border-gray-200 pt-4 space-y-2.5 text-xs text-text-secondary font-semibold">
                   <div className="flex justify-between">
                     <span>Seats selected:</span>
                     <span className="font-bold text-text-primary">{seats} Seat(s)</span>
@@ -491,7 +506,7 @@ export default function CheckoutPage() {
             )}
 
             {/* Pricing split ledger */}
-            <div className="border-t border-border-custom pt-4 space-y-2.5 text-xs text-text-secondary font-semibold">
+            <div className="border-t border-gray-200 pt-4 space-y-2.5 text-xs text-text-secondary font-semibold">
               <div className="flex justify-between text-text-primary">
                 <span>Total Stay/Seats Price:</span>
                 <span>BDT {fullPriceDue.toLocaleString()}</span>
@@ -510,16 +525,16 @@ export default function CheckoutPage() {
                 </>
               )}
               
-              <div className="flex justify-between text-sm font-bold text-text-primary border-t border-border-custom pt-2.5">
+              <div className="flex justify-between text-sm font-bold text-text-primary border-t border-gray-200 pt-2.5">
                 <span>{isHotel ? "Total Due Now" : "Amount Due Now"}</span>
-                <span className="text-theme-secondary">BDT {totalDepositDue.toLocaleString()}</span>
+                <span className="text-[#e2136e]">BDT {totalDepositDue.toLocaleString()}</span>
               </div>
             </div>
 
-            <div className="flex items-start space-x-2 text-[10px] text-text-light leading-normal bg-bg-secondary p-3 border border-border-custom print:hidden">
-              <Lock className="h-4 w-4 text-theme-primary shrink-0 mt-0.5" />
+            <div className="flex items-start space-x-2 text-[10px] text-text-light leading-normal bg-bg-secondary p-3 border border-gray-200 rounded-xl print:hidden">
+              <Lock className="h-4 w-4 text-[#e2136e] shrink-0 mt-0.5" />
               <span>
-                Checkout payments are protected under SSL-encrypted policies. Simulated sandbox is active for testing credentials.
+                Checkout payments are protected under OrbitX Travel encryption policies. Direct bKash manual payment is active.
               </span>
             </div>
 

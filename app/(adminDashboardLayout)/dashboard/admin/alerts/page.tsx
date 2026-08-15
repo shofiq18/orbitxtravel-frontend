@@ -34,14 +34,14 @@ export default function AdminAlertsPage() {
       {/* Page Header */}
       <div className="border-b border-border-custom pb-5">
         <h1 className="text-2xl font-semibold text-text-primary tracking-wide">Automation Trigger</h1>
-        <p className="text-sm text-text-light mt-1">Manually dispatch pre-trip alerts SMS notifications to travelers.</p>
+        <p className="text-sm text-text-light mt-1">Manually dispatch pre-trip email alert notifications to travelers.</p>
       </div>
 
       <div className="max-w-xl mx-auto border border-border-custom bg-bg-primary p-8 space-y-6 rounded-none text-center">
         <BellRing className="h-12 w-12 text-theme-primary mx-auto" />
-        <h3 className="text-xl font-semibold text-text-primary">Departure Alerts Dispatch Panel</h3>
+        <h3 className="text-xl font-semibold text-text-primary">Departure Email Alerts Dispatch Panel</h3>
         <p className="text-sm text-text-secondary leading-relaxed">
-          Scan OrbitX Travel bookings and dispatch automated pre-trip SMS departure reminders directly to travelers whose tours depart in exactly 24 hours.
+          Scan OrbitX Travel bookings and dispatch automated pre-trip departure email reminders directly to travelers whose tours depart in exactly 24 hours.
         </p>
 
         <div className="p-4 bg-bg-secondary border border-border-custom text-xs text-text-secondary text-left space-y-2 rounded-none">
@@ -51,7 +51,7 @@ export default function AdminAlertsPage() {
           </p>
           <p>1. Validates bookings with `bookingStatus = CONFIRMED` and `paymentStatus = PAID`.</p>
           <p>2. Checks package departure schedules against local timestamp ranges.</p>
-          <p>3. Calls Greenweb SMS API fallback sandbox directly on server runtime.</p>
+          <p>3. Dispatches automated HTML email reminders via Nodemailer transport service.</p>
         </div>
 
         <button

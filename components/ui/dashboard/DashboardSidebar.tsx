@@ -1,15 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -33,7 +21,8 @@ import {
   Compass,
   Hotel,
   Globe,
-  Users
+  Users,
+  ShoppingBag
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDispatch, useSelector } from "react-redux";
@@ -73,7 +62,11 @@ export function DashboardSidebar() {
         { title: "Back to Portal", icon: Layers2, href: "/" }
       ];
     }
-    return [{ title: "Back to Portal", icon: Layers2, href: "/" }];
+    return [
+      { title: "My Bookings", icon: ShoppingBag, href: "/dashboard/my-bookings" },
+      { title: "My Profile", icon: UserCheck, href: "/dashboard/profile" },
+      { title: "Back to Portal", icon: Layers2, href: "/" }
+    ];
   };
 
   const activeMenuItems = getMenuItems();

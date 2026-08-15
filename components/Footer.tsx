@@ -149,7 +149,9 @@ export default function Footer() {
           <div>
             &copy; {currentYear} OrbitX Travel. All rights reserved. Registered under license LIC-99302-GLOBAL.
           </div>
-          <div className="flex space-x-6">
+          <div className="flex flex-wrap space-x-6">
+            <Link href="/help" className="hover:text-white transition-colors">Help Center & FAQ</Link>
+            <Link href="/contact" className="hover:text-white transition-colors">Contact Support</Link>
             <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
             <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link href="/cancellation" className="hover:text-white transition-colors">Cancellation Policy</Link>

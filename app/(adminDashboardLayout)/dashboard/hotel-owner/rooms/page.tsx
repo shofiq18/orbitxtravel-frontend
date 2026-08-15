@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import {
@@ -10,7 +10,7 @@ import {
   useDeleteRoomMutation,
 } from "@/redux/api/hotel/hotelApi";
 import { useUploadFileMutation } from "@/redux/api/auth/authApi";
-import { Bed, ShieldCheck, Loader2, Plus, Edit2, Trash2, X } from "lucide-react";
+import { Bed, ShieldCheck, Loader2, Plus, Edit2, Trash2, X, Building, ArrowRight } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
@@ -19,17 +19,30 @@ export default function HotelRoomsPage() {
   const router = useRouter();
 
   // Route protection - ensure user is hotel owner
-  if (!user || user.currentRole !== "hotel_owner") {
-    toast.error("Access Denied: Please log in as a Hotel Owner to view this portal.");
-    router.push("/");
-  }
+  useEffect(() => {
+    if (!user || user.currentRole !== "hotel_owner") {
+      toast.error("Access Denied: Please log in as a Hotel Owner to view this portal.");
+      router.push("/");
+    }
+  }, [user, router]);
 
   // API Hooks
-  const { data: hotelsResponse, isLoading: isLoadingHotels, refetch: refetchHotels } = useGetHotelsQuery({
-    ownerId: user?.id,
-  });
+  const { data: hotelsResponse, isLoading: isLoadingHotels, refetch: refetchHotels } = useGetHotelsQuery(
+    { ownerId: user?.id },
+    { skip: !user }
+  );
   const myHotels = hotelsResponse?.data || [];
-  const activeHotel = myHotels[0];
+
+  // Dropdown state for selecting hotel
+  const [selectedHotelId, setSelectedHotelId] = useState<string>("");
+
+  useEffect(() => {
+    if (myHotels.length > 0 && !selectedHotelId) {
+      setSelectedHotelId(myHotels[0].id);
+    }
+  }, [myHotels, selectedHotelId]);
+
+  const activeHotel = myHotels.find((h: any) => h.id === selectedHotelId) || myHotels[0];
 
   const [createRoom, { isLoading: isCreatingRoom }] = useCreateRoomMutation();
   const [updateRoom, { isLoading: isUpdatingRoom }] = useUpdateRoomMutation();
@@ -93,7 +106,7 @@ export default function HotelRoomsPage() {
       setGalleryPhotos(prev => [...prev, ...uploadedUrls]);
       toast.success(`${uploadedUrls.length} gallery photos uploaded successfully!`);
     } catch (err: any) {
-      toast.error("Failed to upload one or more gallery photos.");
+      toast.error("Failed to upload photos.");
     } finally {
       setIsUploadingGallery(false);
     }
@@ -101,7 +114,10 @@ export default function HotelRoomsPage() {
 
   const handleSubmitRoom = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeHotel) return;
+    if (!activeHotel) {
+      toast.error("Please select or list a hotel property first.");
+      return;
+    }
     if (!roomType || !roomB2C || !roomB2B) {
       toast.error("Please fill in all room pricing metrics.");
       return;
@@ -190,44 +206,71 @@ export default function HotelRoomsPage() {
     return (
       <div className="min-h-[70vh] flex items-center justify-center bg-bg-primary">
         <div className="flex items-center space-x-2 text-text-secondary">
-          <Loader2 className="h-5 w-5 animate-spin" />
+          <Loader2 className="h-5 w-5 animate-spin text-theme-primary" />
           <span>Loading room workspace...</span>
         </div>
       </div>
     );
   }
 
-  if (!activeHotel) {
+  if (myHotels.length === 0 || !activeHotel) {
     return (
-      <div className="w-full mx-auto px-8 lg:px-16 py-10 min-h-[80vh] text-center space-y-4 bg-bg-primary">
-        <h1 className="text-xl font-semibold text-text-primary">No Property Linked</h1>
-        <p className="text-sm text-text-secondary">Please complete your Hotel Property list setup first on the Overview tab.</p>
+      <div className="w-full mx-auto px-8 lg:px-16 py-16 min-h-[80vh] text-center space-y-4 bg-bg-primary border border-dashed border-border-custom rounded-2xl my-10 max-w-2xl">
+        <Building className="h-12 w-12 text-theme-primary mx-auto" />
+        <h1 className="text-xl font-bold text-text-primary">No Property Listed Yet</h1>
+        <p className="text-xs text-text-secondary max-w-md mx-auto leading-relaxed">
+          You need to list your hotel property first before adding room categories and inventory rates.
+        </p>
+        <button
+          onClick={() => router.push("/dashboard/hotel-owner")}
+          className="mt-2 inline-flex items-center space-x-2 bg-theme-primary text-white text-xs font-bold px-5 py-2.5 rounded-xl hover:bg-opacity-95 transition"
+        >
+          <span>List Hotel Property Now</span>
+          <ArrowRight className="h-4 w-4" />
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="w-full mx-auto px-8 lg:px-16 py-10 min-h-[80vh] space-y-8">
+    <div className="w-full mx-auto px-4 sm:px-8 lg:px-12 py-10 min-h-[80vh] space-y-8">
       
-      {/* Title */}
+      {/* Header & Property Selector */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-border-custom pb-5 gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-text-primary tracking-wide">Room Inventory Management</h1>
-          <p className="text-sm text-text-light mt-1">Configure individual suite types, rates, and B2B pricing locks.</p>
+          <p className="text-xs text-text-light mt-1">Configure individual suite types, rates, and B2B wholesale locks.</p>
         </div>
         
-        <div className="flex items-center space-x-2 bg-theme-secondary/10 border border-theme-secondary/20 px-4 py-2 text-xs font-bold text-theme-secondary rounded-none">
-          <ShieldCheck className="h-4 w-4" />
-          <span>Property Linked: {activeHotel.name}</span>
+        {/* Hotel Property Dropdown Selection */}
+        <div className="flex items-center space-x-3 bg-bg-secondary p-2 rounded-xl border border-border-custom w-full md:w-auto">
+          <ShieldCheck className="h-5 w-5 text-emerald-600 shrink-0 ml-1" />
+          <div className="w-full">
+            <span className="text-[10px] font-bold text-text-light uppercase tracking-wider block">Selected Property</span>
+            <select
+              value={selectedHotelId || activeHotel.id}
+              onChange={(e) => {
+                setSelectedHotelId(e.target.value);
+                handleCancelEdit();
+              }}
+              className="bg-transparent font-bold text-xs text-text-primary outline-none cursor-pointer w-full pr-2"
+            >
+              {myHotels.map((h: any) => (
+                <option key={h.id} value={h.id} className="bg-bg-primary text-text-primary">
+                  {h.name} ({h.address})
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Form */}
-        <form onSubmit={handleSubmitRoom} className="border border-border-custom bg-bg-primary p-6 space-y-4 rounded-none h-fit">
+        {/* Room Creation / Edit Form */}
+        <form onSubmit={handleSubmitRoom} className="border border-border-custom bg-bg-primary p-6 space-y-4 rounded-2xl h-fit shadow-xs">
           <h3 className="text-base font-semibold text-text-primary tracking-wide border-b border-border-custom pb-2">
-            {editingRoomId ? "Edit Room Type" : "List a New Room Type"}
+            {editingRoomId ? "Edit Room Category" : `Add Room Category for ${activeHotel.name}`}
           </h3>
 
           <div>
@@ -238,43 +281,46 @@ export default function HotelRoomsPage() {
               placeholder="e.g. Deluxe Couple Suite Ocean View"
               value={roomType}
               onChange={(e) => setRoomType(e.target.value)}
-              className="w-full px-3 py-2 text-sm text-text-primary border border-border-custom bg-bg-secondary outline-none focus:border-theme-primary rounded-none"
+              className="w-full px-3 py-2 text-sm text-text-primary border border-border-custom bg-bg-secondary outline-none focus:border-theme-primary rounded-xl"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-text-secondary mb-1">Capacity Inventory *</label>
+            <label className="block text-xs font-bold text-text-secondary mb-1">Total Inventory Count *</label>
             <input
               type="number"
               required
+              min="1"
               value={inventory}
               onChange={(e) => setInventory(e.target.value)}
-              className="w-full px-3 py-2 text-sm text-text-primary border border-border-custom bg-bg-secondary outline-none focus:border-theme-primary rounded-none"
+              className="w-full px-3 py-2 text-sm text-text-primary border border-border-custom bg-bg-secondary outline-none focus:border-theme-primary rounded-xl"
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-text-secondary mb-1">Public B2C Rate (BDT per night) *</label>
-            <input
-              type="number"
-              required
-              placeholder="e.g. 6500"
-              value={roomB2C}
-              onChange={(e) => setRoomB2C(e.target.value)}
-              className="w-full px-3 py-2 text-sm text-text-primary border border-border-custom bg-bg-secondary outline-none focus:border-theme-primary rounded-none font-mono"
-            />
-          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[10px] font-bold text-text-secondary mb-1 uppercase">B2C Public Rate (BDT/Night) *</label>
+              <input
+                type="number"
+                required
+                placeholder="e.g. 6500"
+                value={roomB2C}
+                onChange={(e) => setRoomB2C(e.target.value)}
+                className="w-full px-3 py-2 text-sm text-text-primary border border-border-custom bg-bg-secondary outline-none focus:border-theme-primary rounded-xl font-mono"
+              />
+            </div>
 
-          <div>
-            <label className="block text-xs font-bold text-text-secondary mb-1">Locked Partner B2B Rate (BDT wholesale) *</label>
-            <input
-              type="number"
-              required
-              placeholder="e.g. 4800"
-              value={roomB2B}
-              onChange={(e) => setRoomB2B(e.target.value)}
-              className="w-full px-3 py-2 text-sm text-text-primary border border-border-custom bg-bg-secondary outline-none focus:border-theme-primary rounded-none font-mono"
-            />
+            <div>
+              <label className="block text-[10px] font-bold text-text-secondary mb-1 uppercase">B2B Wholesale Rate (BDT) *</label>
+              <input
+                type="number"
+                required
+                placeholder="e.g. 4800"
+                value={roomB2B}
+                onChange={(e) => setRoomB2B(e.target.value)}
+                className="w-full px-3 py-2 text-sm text-text-primary border border-border-custom bg-bg-secondary outline-none focus:border-theme-primary rounded-xl font-mono"
+              />
+            </div>
           </div>
 
           <div>
@@ -284,7 +330,7 @@ export default function HotelRoomsPage() {
               placeholder="e.g. King Bed, Air Conditioning, Balcony"
               value={roomAmenities}
               onChange={(e) => setRoomAmenities(e.target.value)}
-              className="w-full px-3 py-2 text-sm text-text-primary border border-border-custom bg-bg-secondary outline-none focus:border-theme-primary rounded-none"
+              className="w-full px-3 py-2 text-sm text-text-primary border border-border-custom bg-bg-secondary outline-none focus:border-theme-primary rounded-xl"
             />
           </div>
 
@@ -301,16 +347,16 @@ export default function HotelRoomsPage() {
               />
               <label
                 htmlFor="room-cover-upload"
-                className="px-4 py-2 border border-border-custom text-xs font-bold text-text-primary bg-bg-secondary hover:bg-bg-secondary/80 cursor-pointer transition rounded-none inline-block"
+                className="px-4 py-2 border border-border-custom text-xs font-bold text-text-primary bg-bg-secondary hover:bg-bg-secondary/80 cursor-pointer transition rounded-xl inline-block"
               >
                 {isUploadingCover ? "Uploading..." : "Select Cover Photo"}
               </label>
               {coverPhoto && (
-                <div className="relative group w-16 h-16">
+                <div className="relative group w-14 h-14">
                   <img
                     src={coverPhoto}
                     alt="Cover preview"
-                    className="w-16 h-16 object-cover border border-border-custom"
+                    className="w-14 h-14 object-cover border border-border-custom rounded-xl"
                   />
                   <button
                     type="button"
@@ -339,23 +385,23 @@ export default function HotelRoomsPage() {
               />
               <label
                 htmlFor="room-gallery-upload"
-                className="px-4 py-2 border border-border-custom text-xs font-bold text-text-primary bg-bg-secondary hover:bg-bg-secondary/80 cursor-pointer transition rounded-none inline-block"
+                className="px-4 py-2 border border-border-custom text-xs font-bold text-text-primary bg-bg-secondary hover:bg-bg-secondary/80 cursor-pointer transition rounded-xl inline-block"
               >
                 {isUploadingGallery ? "Uploading..." : "Select Gallery Photos"}
               </label>
               {galleryPhotos.length > 0 && (
-                <div className="flex flex-wrap gap-3 pt-2">
+                <div className="flex flex-wrap gap-2.5 pt-1">
                   {galleryPhotos.map((url, i) => (
-                    <div key={i} className="relative group w-12 h-12">
+                    <div key={i} className="relative group w-11 h-11">
                       <img
                         src={url}
                         alt="Gallery preview"
-                        className="w-12 h-12 object-cover border border-border-custom"
+                        className="w-11 h-11 object-cover border border-border-custom rounded-xl"
                       />
                       <button
                         type="button"
                         onClick={() => setGalleryPhotos(prev => prev.filter((_, idx) => idx !== i))}
-                        className="absolute -top-1.5 -right-1.5 bg-red-600 hover:bg-red-700 text-white text-[8px] font-bold p-0.5 rounded-full w-4.5 h-4.5 flex items-center justify-center cursor-pointer shadow-md transition"
+                        className="absolute -top-1.5 -right-1.5 bg-red-600 hover:bg-red-700 text-white text-[8px] font-bold p-0.5 rounded-full w-4 h-4 flex items-center justify-center cursor-pointer shadow-md transition"
                         title="Remove image"
                       >
                         ✕
@@ -367,11 +413,11 @@ export default function HotelRoomsPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 pt-2">
             <button
               type="submit"
               disabled={isCreatingRoom || isUpdatingRoom}
-              className="w-full bg-btn-primary text-btn-text-primary font-bold py-2.5 flex justify-center items-center space-x-2 hover:bg-opacity-90 transition rounded-none text-xs cursor-pointer pt-3"
+              className="w-full bg-btn-primary text-btn-text-primary font-bold py-2.5 flex justify-center items-center space-x-2 hover:bg-opacity-90 transition rounded-xl text-xs cursor-pointer"
             >
               {isCreatingRoom || isUpdatingRoom ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -380,13 +426,13 @@ export default function HotelRoomsPage() {
               ) : (
                 <Plus className="h-4 w-4" />
               )}
-              <span>{editingRoomId ? "Update Room Type" : "Add Room Type"}</span>
+              <span>{editingRoomId ? "Update Room Type" : "Add Room Category"}</span>
             </button>
             {editingRoomId && (
               <button
                 type="button"
                 onClick={handleCancelEdit}
-                className="w-full border border-border-custom text-text-primary font-bold py-2 flex justify-center items-center space-x-2 hover:bg-bg-secondary transition rounded-none text-xs cursor-pointer"
+                className="w-full border border-border-custom text-text-primary font-bold py-2 flex justify-center items-center space-x-2 hover:bg-bg-secondary transition rounded-xl text-xs cursor-pointer"
               >
                 <X className="h-4 w-4" />
                 <span>Cancel Edit</span>
@@ -395,25 +441,32 @@ export default function HotelRoomsPage() {
           </div>
         </form>
 
-        {/* Existing Rooms list (Col 2) */}
+        {/* Existing Rooms List */}
         <div className="lg:col-span-2 space-y-4">
-          <h3 className="text-base font-semibold text-text-primary tracking-wide">Existing Room Types</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-semibold text-text-primary tracking-wide">
+              Listed Room Categories for &quot;{activeHotel.name}&quot;
+            </h3>
+            <span className="text-xs font-bold text-text-light">
+              {activeHotel.rooms?.length || 0} Categories
+            </span>
+          </div>
           
           {(!activeHotel.rooms || activeHotel.rooms.length === 0) ? (
-            <div className="text-center py-8 border border-dashed border-border-custom bg-bg-primary rounded-none">
-              <Bed className="h-8 w-8 text-text-light mx-auto mb-2" />
-              <p className="text-xs text-text-secondary font-bold">No rooms listed yet.</p>
+            <div className="text-center py-12 border border-dashed border-border-custom bg-bg-primary rounded-2xl">
+              <Bed className="h-10 w-10 text-text-light mx-auto mb-2" />
+              <p className="text-xs text-text-secondary font-bold">No room categories listed yet for {activeHotel.name}.</p>
+              <p className="text-[11px] text-text-light mt-1">Use the form on the left to add suite categories and set B2C / B2B rates.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4">
               {activeHotel.rooms.map((rm: any) => (
-                <div key={rm.id} className="border border-border-custom bg-bg-primary p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-none">
-                  <div className="space-y-1">
-                    <h4 className="font-semibold text-text-primary text-sm">{rm.type}</h4>
-                    <p className="text-[10px] text-text-light font-bold">ID: <span className="font-mono">{rm.id}</span></p>
-                    <div className="flex flex-wrap gap-1.5 pt-1">
+                <div key={rm.id} className="border border-border-custom bg-bg-primary p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl shadow-xs hover:shadow-sm transition">
+                  <div className="space-y-1.5">
+                    <h4 className="font-bold text-text-primary text-base">{rm.type}</h4>
+                    <div className="flex flex-wrap gap-1.5">
                       {rm.amenities.map((am: string, i: number) => (
-                        <span key={i} className="bg-bg-secondary border border-border-custom px-2 py-0.5 text-[10px] text-text-secondary rounded-none">
+                        <span key={i} className="bg-bg-secondary border border-border-custom/60 px-2 py-0.5 text-[10px] text-text-secondary font-semibold rounded-lg">
                           {am}
                         </span>
                       ))}
@@ -427,44 +480,44 @@ export default function HotelRoomsPage() {
                             key={idx}
                             src={photo}
                             alt={`Room Photo ${idx + 1}`}
-                            className="w-10 h-10 object-cover border border-border-custom"
+                            className="w-10 h-10 object-cover border border-border-custom rounded-lg"
                           />
                         ))}
                       </div>
                     )}
                   </div>
 
-                  <div className="flex items-center space-x-6 text-right shrink-0">
+                  <div className="flex items-center space-x-5 text-right shrink-0">
                     <div>
-                      <p className="text-[10px] text-text-light font-bold">B2C Public</p>
-                      <p className="text-sm font-bold text-text-primary">BDT {rm.b2cPrice}</p>
+                      <p className="text-[10px] text-text-light font-bold uppercase">B2C Public</p>
+                      <p className="text-sm font-extrabold text-text-primary">BDT {rm.b2cPrice?.toLocaleString()}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-text-light font-bold">B2B Wholesale</p>
-                      <p className="text-sm font-bold text-theme-secondary">BDT {rm.b2bPrice}</p>
+                      <p className="text-[10px] text-text-light font-bold uppercase">B2B Wholesale</p>
+                      <p className="text-sm font-extrabold text-theme-secondary">BDT {rm.b2bPrice?.toLocaleString()}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-text-light font-bold">Inventory</p>
-                      <p className="text-sm font-extrabold text-theme-primary">{rm.inventory} Rooms</p>
+                      <p className="text-[10px] text-text-light font-bold uppercase">Inventory</p>
+                      <p className="text-sm font-black text-theme-primary">{rm.inventory} Rooms</p>
                     </div>
-                    <div className="flex items-center space-x-2.5 pl-4 border-l border-border-custom">
+                    <div className="flex items-center space-x-2 pl-4 border-l border-border-custom">
                       <button
                         onClick={() => handleStartEdit(rm)}
-                        className={`p-2 transition rounded-none border border-border-custom hover:bg-bg-secondary cursor-pointer ${
+                        className={`p-2 transition rounded-xl border border-border-custom hover:bg-bg-secondary cursor-pointer ${
                           editingRoomId === rm.id
                             ? "bg-theme-primary/10 text-theme-primary border-theme-primary"
                             : "text-text-secondary hover:text-text-primary"
                         }`}
                         title="Edit Room Type"
                       >
-                        <Edit2 className="h-3.5 w-3.5" />
+                        <Edit2 className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteRoom(rm.id)}
-                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 transition rounded-none border border-border-custom hover:border-red-200 cursor-pointer"
+                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 transition rounded-xl border border-border-custom hover:border-red-200 cursor-pointer"
                         title="Delete Room Type"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>

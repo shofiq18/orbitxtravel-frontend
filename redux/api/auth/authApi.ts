@@ -35,6 +35,22 @@ export const authApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
+    forgotPassword: builder.mutation({
+      query: (body) => ({
+        url: "/auth/forgot-password",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["User"],
+    }),
+    resetPassword: builder.mutation({
+      query: (body) => ({
+        url: "/auth/reset-password",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["User"],
+    }),
     becomeVendor: builder.mutation({
       query: (body) => ({
         url: "/users/become-vendor",
@@ -88,6 +104,8 @@ export const {
   useVerifyEmailMutation,
   useResendOtpMutation,
   useLogInMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
   useBecomeVendorMutation,
   useSwitchRoleMutation,
   useGetMeQuery,

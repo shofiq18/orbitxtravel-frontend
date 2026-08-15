@@ -10,6 +10,7 @@ export interface UserProfile {
   currentRole?: string;
   isVerified?: boolean;
   role?: string;
+  businessProfile?: any;
 }
 
 interface UserState {
@@ -66,6 +67,11 @@ const userSlice = createSlice({
         state.user.currentRole = action.payload;
       }
     },
+    updateUserInfo: (state, action: PayloadAction<Partial<UserProfile>>) => {
+      if (state.user) {
+        state.user = { ...state.user, ...action.payload };
+      }
+    },
     logout: (state) => {
       state.user = null;
       state.accessToken = null;
@@ -80,5 +86,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { setCredentials, logout, updateActiveRole } = userSlice.actions;
+export const { setCredentials, logout, updateActiveRole, updateUserInfo } = userSlice.actions;
 export default userSlice.reducer;
