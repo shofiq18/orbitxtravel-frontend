@@ -40,6 +40,7 @@ export function DashboardSidebar() {
     if (role === "admin") {
       return [
         { title: "Vendor Onboarding", icon: UserCheck, href: "/dashboard/admin" },
+        { title: "Payouts & Advances", icon: Landmark, href: "/dashboard/admin/payouts" },
         { title: "User Management", icon: Users, href: "/dashboard/admin/users" },
         { title: "Accounting Management", icon: Landmark, href: "/dashboard/admin/accounting" },
         { title: "Automation Trigger", icon: BellRing, href: "/dashboard/admin/alerts" },

@@ -250,7 +250,7 @@ export default function SignUpForm() {
               </p>
             </div>
 
-            <form onSubmit={handleOtpSubmit} className="space-y-6">
+            <form onSubmit={handleOtpSubmit} className="space-y-6 text-left">
               {errors.otp && (
                 <div className="p-3 text-sm text-red-700 border border-red-200 bg-red-50 rounded-none text-center">
                   {errors.otp}
@@ -312,8 +312,8 @@ export default function SignUpForm() {
         {step === "success" && (
           <div className="text-center py-6 flex flex-col items-center justify-center max-w-md mx-auto">
             <CheckCircle2 className="h-20 w-20 text-theme-secondary mb-4" />
-            <h1 className="text-3xl font-semibold text-text-primary tracking-wide">Verified!</h1>
-            <p className="mt-2 text-base text-text-secondary">
+            <h1 className="text-3xl font-semibold text-text-primary tracking-wide text-center">Verified!</h1>
+            <p className="mt-2 text-base text-text-secondary text-center">
               Your email verification was successful. You can now log in to access all traveling and hosting workspaces.
             </p>
             

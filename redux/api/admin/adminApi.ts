@@ -69,6 +69,66 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
+    createAdvanceRequest: builder.mutation({
+      query: (body) => ({
+        url: "/admin/advance-requests",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["User"],
+    }),
+    getMyAdvanceRequests: builder.query({
+      query: () => ({
+        url: "/admin/advance-requests/my",
+        method: "GET",
+      }),
+      providesTags: ["User"],
+    }),
+    getAllAdvanceRequests: builder.query({
+      query: () => ({
+        url: "/admin/advance-requests/all",
+        method: "GET",
+      }),
+      providesTags: ["User"],
+    }),
+    inspectAndDisburseAdvance: builder.mutation({
+      query: ({ id, body }) => ({
+        url: `/admin/advance-requests/${id}/disburse`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["User"],
+    }),
+    getCommissionRate: builder.query({
+      query: () => ({
+        url: "/admin/commission-rate",
+        method: "GET",
+      }),
+      providesTags: ["User"],
+    }),
+    updateCommissionRate: builder.mutation({
+      query: (body) => ({
+        url: "/admin/commission-rate",
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["User"],
+    }),
+    getMilestoneDisbursals: builder.query({
+      query: () => ({
+        url: "/admin/milestones/disbursals",
+        method: "GET",
+      }),
+      providesTags: ["User"],
+    }),
+    disburseFinalMilestone: builder.mutation({
+      query: (body) => ({
+        url: "/admin/milestones/disburse-final",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["User"],
+    }),
   }),
 });
 
@@ -77,9 +137,17 @@ export const {
   useVerifyVendorMutation,
   useGetEscrowBookingsQuery,
   useGetCommissionsQuery,
+  useGetCommissionRateQuery,
+  useUpdateCommissionRateMutation,
   useGetPayoutsQuery,
   useReleasePayoutMutation,
   useTriggerPreTripAlertsMutation,
   useGetUsersQuery,
   useSuspendUserMutation,
+  useCreateAdvanceRequestMutation,
+  useGetMyAdvanceRequestsQuery,
+  useGetAllAdvanceRequestsQuery,
+  useInspectAndDisburseAdvanceMutation,
+  useGetMilestoneDisbursalsQuery,
+  useDisburseFinalMilestoneMutation,
 } = adminApi;

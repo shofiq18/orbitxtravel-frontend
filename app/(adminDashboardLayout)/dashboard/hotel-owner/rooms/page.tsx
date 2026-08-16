@@ -20,7 +20,9 @@ export default function HotelRoomsPage() {
 
   // Route protection - ensure user is hotel owner
   useEffect(() => {
-    if (!user || user.currentRole !== "hotel_owner") {
+    if (!user) {
+      router.push("/login");
+    } else if (user.currentRole !== "hotel_owner") {
       toast.error("Access Denied: Please log in as a Hotel Owner to view this portal.");
       router.push("/");
     }

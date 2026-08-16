@@ -12,6 +12,11 @@ import {
 import { useGetBookingsByUserQuery } from "@/redux/api/booking/bookingApi";
 import { useUploadFileMutation } from "@/redux/api/auth/authApi";
 import { 
+  useGetVendorsQueueQuery,
+  useCreateAdvanceRequestMutation,
+  useGetMyAdvanceRequestsQuery,
+} from "@/redux/api/admin/adminApi";
+import { 
   Compass, 
   Loader2, 
   Plus, 
@@ -42,14 +47,16 @@ export default function TourConstructorPage() {
 
   // Route protection - ensure user is tour organizer
   useEffect(() => {
-    if (!user || user.currentRole !== "tour_organizer") {
+    if (!user) {
+      router.push("/login");
+    } else if (user.currentRole !== "tour_organizer") {
       toast.error("Access Denied: Please log in as a Tour Organizer to view this portal.");
       router.push("/");
     }
   }, [user, router]);
 
   // Dashboard view mode: "packages", "bookings", "create", "edit"
-  const [view, setView] = useState<"packages" | "bookings" | "create" | "edit">("packages");
+  const [view, setView] = useState<"packages" | "bookings" | "advances" | "create" | "edit">("packages");
   const [editingPackageId, setEditingPackageId] = useState<string | null>(null);
 
   // Selected package modal state (for clicking package -> viewing bookings)
@@ -60,6 +67,8 @@ export default function TourConstructorPage() {
 
   // Advance payout request modal state
   const [showAdvanceModal, setShowAdvanceModal] = useState(false);
+  const [selectedAdvancePackageId, setSelectedAdvancePackageId] = useState("");
+  const [advanceRequestedAmount, setAdvanceRequestedAmount] = useState("");
   const [advanceReason, setAdvanceReason] = useState("Advance deposit for bus reservation and hotel booking");
 
   // API Hooks
@@ -72,6 +81,13 @@ export default function TourConstructorPage() {
     skip: !user || user.currentRole !== "tour_organizer",
   });
   const tourBookings = bookingsResponse?.data || [];
+
+  const { data: advanceRequestsResponse } = useGetMyAdvanceRequestsQuery(undefined, {
+    skip: !user || user.currentRole !== "tour_organizer",
+  });
+  const myAdvanceRequests = advanceRequestsResponse?.data || [];
+
+  const [createAdvanceRequest, { isLoading: isSubmittingAdvance }] = useCreateAdvanceRequestMutation();
 
   const [createPackage, { isLoading: isPublishing }] = useCreatePackageMutation();
   const [updatePackage, { isLoading: isUpdating }] = useUpdatePackageMutation();
@@ -295,11 +311,61 @@ export default function TourConstructorPage() {
     toast.success("Active B2B holds cleared.");
   };
 
-  const handleSubmitAdvanceRequest = (e: React.FormEvent) => {
+  const selectedPkgForAdvance = myPackages.find((p: any) => p.id === selectedAdvancePackageId);
+  const selectedPkgBookings = selectedAdvancePackageId
+    ? tourBookings.filter((b: any) => b.packageId === selectedAdvancePackageId && b.bookingStatus !== "CANCELLED")
+    : [];
+  const selectedPkgTotalEscrow = selectedPkgBookings.reduce((sum: number, b: any) => {
+    const platformComm = (b.totalAmount || 0) * 0.10;
+    const hostShare = Math.max(0, (b.paidAmount || 0) - platformComm);
+    return sum + hostShare;
+  }, 0);
+
+  const selectedPkgAdvances = selectedAdvancePackageId
+    ? myAdvanceRequests.filter((r: any) => r.packageId === selectedAdvancePackageId && r.status !== "REJECTED")
+    : [];
+  const selectedPkgAlreadyDisbursed = selectedPkgAdvances.reduce((sum: number, r: any) => sum + (r.requestedAmount || 0), 0);
+
+  const selectedPkgMaxAdvance = Math.round(selectedPkgTotalEscrow * 0.5);
+  const selectedPkgRemainingAdvance = Math.max(0, selectedPkgMaxAdvance - selectedPkgAlreadyDisbursed);
+
+  const handleSubmitAdvanceRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Advance Payout Request submitted to Admin for review!");
-    setShowAdvanceModal(false);
+
+    if (!selectedAdvancePackageId) {
+      toast.error("Please select a Tour Package for your advance request.");
+      return;
+    }
+
+    const amt = Number(advanceRequestedAmount);
+    if (!amt || amt <= 0) {
+      toast.error("Please enter a valid requested advance amount.");
+      return;
+    }
+
+    if (amt > selectedPkgRemainingAdvance) {
+      toast.error(`Requested amount exceeds maximum allowable advance (BDT ${selectedPkgRemainingAdvance.toLocaleString()}).`);
+      return;
+    }
+
+    try {
+      await createAdvanceRequest({
+        packageId: selectedAdvancePackageId,
+        requestedAmount: amt,
+        reason: advanceReason,
+      }).unwrap();
+
+      toast.success("Advance Payout Request submitted to Admin for review!");
+      setShowAdvanceModal(false);
+      setSelectedAdvancePackageId("");
+      setAdvanceRequestedAmount("");
+      setAdvanceReason("");
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to submit advance payout request.");
+    }
   };
+
+
 
   const handlePublishPackage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -427,6 +493,18 @@ export default function TourConstructorPage() {
           <Users className="h-4 w-4" />
           <span>All Bookings & Travelers ({tourBookings.length})</span>
         </button>
+
+        <button
+          onClick={() => setView("advances")}
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer flex items-center space-x-2 ${
+            view === "advances"
+              ? "bg-theme-primary text-white"
+              : "bg-bg-secondary border border-border-custom text-text-secondary hover:text-text-primary"
+          }`}
+        >
+          <Landmark className="h-4 w-4" />
+          <span>My Advance Requests ({myAdvanceRequests.length})</span>
+        </button>
       </div>
 
       {/* View 1: Packages List View */}
@@ -466,6 +544,7 @@ export default function TourConstructorPage() {
               {myPackages.map((pkg: any) => {
                 const pkgBookings = tourBookings.filter((b: any) => b.packageId === pkg.id);
                 const bookedCount = pkgBookings.reduce((sum: number, b: any) => sum + (b.seatsBooked || 0), 0);
+                const remainingSeats = Math.max(0, (pkg.maxSeats || 0) - bookedCount);
 
                 return (
                   <div key={pkg.id} className="border border-border-custom bg-bg-primary flex flex-col justify-between rounded-2xl overflow-hidden hover:shadow-md transition duration-300">
@@ -517,7 +596,7 @@ export default function TourConstructorPage() {
                             <span className="text-[10px] text-text-light font-bold block uppercase tracking-wider">Allocation</span>
                             <span className="font-semibold flex items-center gap-1">
                               <Users className="h-3.5 w-3.5 shrink-0" />
-                              <span>{pkg.availableSeats}/{pkg.maxSeats} Seats Left</span>
+                              <span>{remainingSeats}/{pkg.maxSeats} Seats Left</span>
                             </span>
                           </div>
                         </div>
@@ -780,6 +859,107 @@ export default function TourConstructorPage() {
         </div>
       )}
 
+      {/* View 3: Advance Requests Ledger View */}
+      {view === "advances" && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border-custom pb-4 gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold text-text-primary">My Advance Payout Requests</h1>
+              <p className="text-xs text-text-light mt-1">Track advance disbursal requests submitted to OrbitX Travel Admin.</p>
+            </div>
+            
+            <button
+              onClick={() => setShowAdvanceModal(true)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 text-xs transition rounded-xl flex items-center justify-center space-x-1.5 cursor-pointer shadow-xs shrink-0"
+            >
+              <Send className="h-4 w-4" />
+              <span>Submit New Advance Request</span>
+            </button>
+          </div>
+
+          {myAdvanceRequests.length === 0 ? (
+            <div className="text-center py-16 border border-dashed border-border-custom bg-bg-primary rounded-2xl space-y-3">
+              <Landmark className="h-10 w-10 text-emerald-600 mx-auto" />
+              <h3 className="text-sm font-bold text-text-primary">No Advance Requests Submitted</h3>
+              <p className="text-xs text-text-light max-w-sm mx-auto">You have not submitted any advance payout requests for your tour packages yet.</p>
+              <button
+                onClick={() => setShowAdvanceModal(true)}
+                className="px-4 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl hover:bg-emerald-700 transition cursor-pointer"
+              >
+                Request Advance (50%)
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto border border-border-custom rounded-2xl bg-bg-primary">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-border-custom bg-bg-secondary/60 text-text-light uppercase tracking-wider text-[10px]">
+                    <th className="p-4">Target Tour Package</th>
+                    <th className="p-4">Requested Amount</th>
+                    <th className="p-4">Disbursed Amount</th>
+                    <th className="p-4">Expenses Reason</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4">Admin Audit Notes</th>
+                    <th className="p-4">Date Submitted</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-custom/50 text-text-primary">
+                  {myAdvanceRequests.map((req: any) => {
+                    const isPending = req.status === "PENDING";
+                    const isDisbursed = req.status === "DISBURSED";
+                    const isRejected = req.status === "REJECTED";
+
+                    return (
+                      <tr key={req.id} className="hover:bg-bg-secondary/30 transition">
+                        <td className="p-4">
+                          <div className="font-bold text-text-primary">{req.package?.title || "Tour Package"}</div>
+                          <div className="text-[10px] text-text-light">{req.package?.destination}</div>
+                        </td>
+                        <td className="p-4 font-extrabold text-theme-secondary text-sm">
+                          BDT {req.requestedAmount?.toLocaleString()}
+                        </td>
+                        <td className="p-4 font-bold text-emerald-600">
+                          {req.disbursedAmount ? `BDT ${req.disbursedAmount.toLocaleString()}` : "-"}
+                        </td>
+                        <td className="p-4 max-w-xs">
+                          <p className="text-xs text-text-secondary line-clamp-2">{req.reason}</p>
+                        </td>
+                        <td className="p-4">
+                          {isPending && (
+                            <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full font-bold text-[10px] inline-flex items-center space-x-1">
+                              <Clock className="h-3 w-3" />
+                              <span>Pending Review</span>
+                            </span>
+                          )}
+                          {isDisbursed && (
+                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold text-[10px] inline-flex items-center space-x-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              <span>Disbursed to Account</span>
+                            </span>
+                          )}
+                          {isRejected && (
+                            <span className="bg-red-50 text-red-700 border border-red-200 px-2.5 py-0.5 rounded-full font-bold text-[10px] inline-flex items-center space-x-1">
+                              <XCircle className="h-3 w-3" />
+                              <span>Declined</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-4 text-xs text-text-light italic max-w-xs">
+                          {req.adminNote || "-"}
+                        </td>
+                        <td className="p-4 text-[11px] text-text-light">
+                          {new Date(req.createdAt).toLocaleString()}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Advance Request Modal */}
       {showAdvanceModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
@@ -789,9 +969,74 @@ export default function TourConstructorPage() {
               <span>Request Advance Payout (Up to 50%)</span>
             </h3>
             <p className="text-xs text-text-light leading-relaxed">
-              Submit an advance disbursal request to Admin to reserve transport, hotel rooms, or supplies prior to the tour departure date.
+              Select a Tour Package to request an advance disbursal prior to the trip departure date.
             </p>
             
+            <div>
+              <label className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1">Select Tour Package *</label>
+              <select
+                required
+                value={selectedAdvancePackageId}
+                onChange={(e) => {
+                  setSelectedAdvancePackageId(e.target.value);
+                  setAdvanceRequestedAmount("");
+                }}
+                className="w-full p-3 text-xs border border-border-custom bg-bg-secondary text-text-primary rounded-xl outline-none focus:border-theme-primary font-semibold"
+              >
+                <option value="">-- Choose Tour Package --</option>
+                {myPackages.map((pkg: any) => {
+                  const pBookings = tourBookings.filter((b: any) => b.packageId === pkg.id && b.bookingStatus !== "CANCELLED");
+                  const pEscrow = pBookings.reduce((sum: number, b: any) => {
+                    const platformComm = (b.totalAmount || 0) * 0.10;
+                    const hostShare = Math.max(0, (b.paidAmount || 0) - platformComm);
+                    return sum + hostShare;
+                  }, 0);
+                  return (
+                    <option key={pkg.id} value={pkg.id}>
+                      {pkg.title} (Net Host Escrow: BDT {pEscrow.toLocaleString()})
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            {selectedAdvancePackageId && (
+              <div className="bg-bg-secondary/60 border border-border-custom/60 p-3 rounded-xl space-y-1.5 text-xs text-text-secondary">
+                <div className="flex justify-between">
+                  <span>Accumulated Escrow:</span>
+                  <span className="font-bold text-text-primary">BDT {selectedPkgTotalEscrow.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Max Allowable Advance (50%):</span>
+                  <span className="font-bold text-emerald-600">BDT {selectedPkgMaxAdvance.toLocaleString()}</span>
+                </div>
+                {selectedPkgAlreadyDisbursed > 0 && (
+                  <div className="flex justify-between text-amber-600">
+                    <span>Already Requested/Disbursed:</span>
+                    <span className="font-bold">BDT {selectedPkgAlreadyDisbursed.toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t border-border-custom/50 pt-1 font-bold">
+                  <span>Remaining Allowable Advance:</span>
+                  <span className="text-theme-secondary">BDT {selectedPkgRemainingAdvance.toLocaleString()}</span>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1">Advance Amount Requested (BDT) *</label>
+              <input
+                type="number"
+                min="1"
+                max={selectedPkgRemainingAdvance || 999999}
+                required
+                value={advanceRequestedAmount}
+                onChange={(e) => setAdvanceRequestedAmount(e.target.value)}
+                placeholder={`Enter amount up to BDT ${selectedPkgRemainingAdvance ? selectedPkgRemainingAdvance.toLocaleString() : "0"}`}
+                className="w-full p-3 text-xs border border-border-custom bg-bg-secondary text-text-primary rounded-xl outline-none focus:border-theme-primary font-bold"
+              />
+            </div>
+
             <div>
               <label className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1">Reason / Expenses Description *</label>
               <textarea
@@ -799,7 +1044,7 @@ export default function TourConstructorPage() {
                 required
                 value={advanceReason}
                 onChange={(e) => setAdvanceReason(e.target.value)}
-                placeholder="Describe why advance payout is required..."
+                placeholder="Describe why advance payout is required (e.g. Bus deposit, Hotel lock fee)..."
                 className="w-full p-3 text-xs border border-border-custom bg-bg-secondary text-text-primary rounded-xl outline-none focus:border-theme-primary"
               />
             </div>
@@ -808,15 +1053,17 @@ export default function TourConstructorPage() {
               <button
                 type="button"
                 onClick={() => setShowAdvanceModal(false)}
-                className="px-4 py-2 border border-border-custom text-text-secondary text-xs font-bold rounded-xl hover:bg-bg-secondary transition"
+                className="px-4 py-2 border border-border-custom text-text-secondary text-xs font-bold rounded-xl hover:bg-bg-secondary transition cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition"
+                disabled={isSubmittingAdvance || !selectedAdvancePackageId || selectedPkgRemainingAdvance <= 0}
+                className="px-5 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition disabled:opacity-50 cursor-pointer flex items-center space-x-1"
               >
-                Submit Request
+                {isSubmittingAdvance ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                <span>{isSubmittingAdvance ? "Submitting..." : "Submit Request"}</span>
               </button>
             </div>
           </form>

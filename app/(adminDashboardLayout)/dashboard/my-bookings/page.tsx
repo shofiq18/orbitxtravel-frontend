@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { useGetBookingsByUserQuery, useCancelBookingMutation } from "@/redux/api/booking/bookingApi";
@@ -41,11 +41,11 @@ export default function MyBookingsPage() {
   const [cancelBooking, { isLoading: isCancelling }] = useCancelBookingMutation();
 
   // Route protection
-  if (!user) {
-    toast.error("Access Denied: Please log in first.");
-    router.push("/login");
-    return null;
-  }
+  useEffect(() => {
+    if (!user) {
+      router.push("/login");
+    }
+  }, [user, router]);
 
   const getAbsoluteVoucherUrl = (relativeUrl: string) => {
     if (!relativeUrl) return "#";

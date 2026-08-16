@@ -9,17 +9,21 @@ import {
 import { Loader2, Check, X, Eye } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function AdminOnboardingPage() {
   const { user } = useSelector((state: RootState) => state.user);
   const router = useRouter();
 
   // Route protection - ensure user is admin
-  if (!user || user.currentRole !== "admin") {
-    toast.error("Access Denied: Admin privileges required.");
-    router.push("/");
-  }
+  useEffect(() => {
+    if (!user) {
+      router.push("/login");
+    } else if (user.currentRole !== "admin") {
+      toast.error("Access Denied: Admin privileges required.");
+      router.push("/");
+    }
+  }, [user, router]);
 
   // API Queries
   const { data: queueResponse, isLoading: isLoadingQueue, refetch: refetchQueue } = useGetVendorsQueueQuery(undefined);

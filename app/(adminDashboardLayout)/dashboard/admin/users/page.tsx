@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { useGetUsersQuery, useSuspendUserMutation } from "@/redux/api/admin/adminApi";
@@ -13,10 +13,14 @@ export default function UserManagementPage() {
   const router = useRouter();
 
   // Route protection
-  if (!currentUser || currentUser.currentRole !== "admin") {
-    toast.error("Access Denied: Admin privileges required.");
-    router.push("/");
-  }
+  useEffect(() => {
+    if (!currentUser) {
+      router.push("/login");
+    } else if (currentUser.currentRole !== "admin") {
+      toast.error("Access Denied: Admin privileges required.");
+      router.push("/");
+    }
+  }, [currentUser, router]);
 
   // API Queries & Mutations
   const { data: usersResponse, isLoading, refetch } = useGetUsersQuery(undefined);

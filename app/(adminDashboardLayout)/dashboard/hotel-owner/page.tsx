@@ -12,6 +12,10 @@ import {
 import { useGetBookingsByUserQuery } from "@/redux/api/booking/bookingApi";
 import { useUploadFileMutation } from "@/redux/api/auth/authApi";
 import { 
+  useCreateAdvanceRequestMutation,
+  useGetMyAdvanceRequestsQuery,
+} from "@/redux/api/admin/adminApi";
+import { 
   Home, 
   ShieldCheck, 
   Loader2, 
@@ -27,6 +31,8 @@ import {
   XCircle,
   Calendar,
   Eye,
+  Landmark,
+  Send,
   X
 } from "lucide-react";
 import { toast } from "react-hot-toast";
@@ -38,14 +44,16 @@ export default function HotelPropertyPage() {
 
   // Route protection - ensure user is hotel owner
   useEffect(() => {
-    if (!user || user.currentRole !== "hotel_owner") {
+    if (!user) {
+      router.push("/login");
+    } else if (user.currentRole !== "hotel_owner") {
       toast.error("Access Denied: Please log in as a Hotel Owner to view this portal.");
       router.push("/");
     }
   }, [user, router]);
 
-  // Dashboard view mode: "hotels", "bookings", "create", "edit"
-  const [view, setView] = useState<"hotels" | "bookings" | "create" | "edit">("hotels");
+  // Dashboard view mode: "hotels", "bookings", "advances", "create", "edit"
+  const [view, setView] = useState<"hotels" | "bookings" | "advances" | "create" | "edit">("hotels");
   const [editingHotelId, setEditingHotelId] = useState<string | null>(null);
 
   // Selected hotel modal state for drill-down
@@ -53,6 +61,12 @@ export default function HotelPropertyPage() {
 
   // Search filter for hotel bookings
   const [bookingSearch, setBookingSearch] = useState("");
+
+  // Advance payout request modal state
+  const [showAdvanceModal, setShowAdvanceModal] = useState(false);
+  const [selectedAdvanceHotelId, setSelectedAdvanceHotelId] = useState("");
+  const [advanceRequestedAmount, setAdvanceRequestedAmount] = useState("");
+  const [advanceReason, setAdvanceReason] = useState("Advance deposit for room maintenance and guest catering");
 
   // API Hooks
   const { data: hotelsResponse, isLoading: isLoadingHotels, refetch: refetchHotels } = useGetHotelsQuery({
@@ -64,6 +78,13 @@ export default function HotelPropertyPage() {
     skip: !user || user.currentRole !== "hotel_owner",
   });
   const hotelBookings = bookingsResponse?.data || [];
+
+  const { data: advanceRequestsResponse } = useGetMyAdvanceRequestsQuery(undefined, {
+    skip: !user || user.currentRole !== "hotel_owner",
+  });
+  const myAdvanceRequests = advanceRequestsResponse?.data || [];
+
+  const [createAdvanceRequest, { isLoading: isSubmittingAdvance }] = useCreateAdvanceRequestMutation();
 
   const [createHotel, { isLoading: isCreatingHotel }] = useCreateHotelMutation();
   const [updateHotel, { isLoading: isUpdatingHotel }] = useUpdateHotelMutation();
@@ -211,6 +232,60 @@ export default function HotelPropertyPage() {
     }
   };
 
+  const selectedHotelForAdvance = myHotels.find((h: any) => h.id === selectedAdvanceHotelId);
+  const selectedHotelBookingsForAdv = selectedAdvanceHotelId
+    ? hotelBookings.filter((b: any) => b.hotelId === selectedAdvanceHotelId && b.bookingStatus !== "CANCELLED")
+    : [];
+  const selectedHotelTotalEscrow = selectedHotelBookingsForAdv.reduce((sum: number, b: any) => {
+    const platformComm = (b.totalAmount || 0) * 0.10;
+    const hostShare = Math.max(0, (b.paidAmount || 0) - platformComm);
+    return sum + hostShare;
+  }, 0);
+
+  const selectedHotelAdvances = selectedAdvanceHotelId
+    ? myAdvanceRequests.filter((r: any) => r.hotelId === selectedAdvanceHotelId && r.status !== "REJECTED")
+    : [];
+  const selectedHotelAlreadyDisbursed = selectedHotelAdvances.reduce((sum: number, r: any) => sum + (r.requestedAmount || 0), 0);
+
+  const selectedHotelMaxAdvance = Math.round(selectedHotelTotalEscrow * 0.5);
+  const selectedHotelRemainingAdvance = Math.max(0, selectedHotelMaxAdvance - selectedHotelAlreadyDisbursed);
+
+  const handleSubmitAdvanceRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedAdvanceHotelId) {
+      toast.error("Please select a Hotel Property for your advance request.");
+      return;
+    }
+
+    const amt = Number(advanceRequestedAmount);
+    if (!amt || amt <= 0) {
+      toast.error("Please enter a valid requested advance amount.");
+      return;
+    }
+
+    if (amt > selectedHotelRemainingAdvance) {
+      toast.error(`Requested amount exceeds maximum allowable advance (BDT ${selectedHotelRemainingAdvance.toLocaleString()}).`);
+      return;
+    }
+
+    try {
+      await createAdvanceRequest({
+        hotelId: selectedAdvanceHotelId,
+        requestedAmount: amt,
+        reason: advanceReason,
+      }).unwrap();
+
+      toast.success("Advance Payout Request submitted to Admin for verification!");
+      setShowAdvanceModal(false);
+      setSelectedAdvanceHotelId("");
+      setAdvanceRequestedAmount("");
+      setAdvanceReason("");
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to submit advance payout request.");
+    }
+  };
+
   const filteredHotelBookings = hotelBookings.filter((b: any) => {
     if (!bookingSearch.trim()) return true;
     const q = bookingSearch.toLowerCase();
@@ -232,6 +307,30 @@ export default function HotelPropertyPage() {
   return (
     <div className="w-full mx-auto px-4 sm:px-8 lg:px-12 py-10 min-h-[80vh] space-y-8">
       
+      {/* Escrow Balance & Navigation Banner */}
+      <div className="border border-border-custom bg-bg-primary p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+        <div className="flex items-center space-x-4">
+          <div className="p-3.5 bg-emerald-50 text-emerald-600 rounded-xl">
+            <Landmark className="h-7 w-7" />
+          </div>
+          <div>
+            <span className="text-[10px] font-extrabold text-text-light uppercase tracking-wider block">ORBITX HOTEL ESCROW FUNDS</span>
+            <h3 className="text-xl font-bold text-text-primary mt-0.5">Property Escrow Active</h3>
+            <p className="text-xs text-text-light">Guest payments are held securely and released upon check-in or on advance request.</p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-3">
+          <button
+            type="button"
+            onClick={() => setShowAdvanceModal(true)}
+            className="px-4 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl hover:bg-emerald-700 transition flex items-center space-x-2 shrink-0 cursor-pointer shadow-xs"
+          >
+            <Send className="h-4 w-4" />
+            <span>Request Advance (50%)</span>
+          </button>
+        </div>
+      </div>
+
       {/* Primary Dashboard Navigation Tabs */}
       <div className="flex items-center space-x-2 border-b border-border-custom pb-3">
         <button
@@ -256,6 +355,18 @@ export default function HotelPropertyPage() {
         >
           <Users className="h-4 w-4" />
           <span>All Guest Reservations ({hotelBookings.length})</span>
+        </button>
+
+        <button
+          onClick={() => setView("advances")}
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer flex items-center space-x-2 ${
+            view === "advances"
+              ? "bg-theme-primary text-white"
+              : "bg-bg-secondary border border-border-custom text-text-secondary hover:text-text-primary"
+          }`}
+        >
+          <Landmark className="h-4 w-4" />
+          <span>My Advance Requests ({myAdvanceRequests.length})</span>
         </button>
       </div>
 
@@ -598,6 +709,107 @@ export default function HotelPropertyPage() {
         </div>
       )}
 
+      {/* View 3: Advance Requests Ledger View */}
+      {view === "advances" && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border-custom pb-4 gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold text-text-primary">My Advance Payout Requests</h1>
+              <p className="text-xs text-text-light mt-1">Track advance disbursal requests submitted to OrbitX Travel Admin.</p>
+            </div>
+            
+            <button
+              onClick={() => setShowAdvanceModal(true)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 text-xs transition rounded-xl flex items-center justify-center space-x-1.5 cursor-pointer shadow-xs shrink-0"
+            >
+              <Send className="h-4 w-4" />
+              <span>Submit New Advance Request</span>
+            </button>
+          </div>
+
+          {myAdvanceRequests.length === 0 ? (
+            <div className="text-center py-16 border border-dashed border-border-custom bg-bg-primary rounded-2xl space-y-3">
+              <Landmark className="h-10 w-10 text-emerald-600 mx-auto" />
+              <h3 className="text-sm font-bold text-text-primary">No Advance Requests Submitted</h3>
+              <p className="text-xs text-text-light max-w-sm mx-auto">You have not submitted any advance payout requests for your hotel properties yet.</p>
+              <button
+                onClick={() => setShowAdvanceModal(true)}
+                className="px-4 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl hover:bg-emerald-700 transition cursor-pointer"
+              >
+                Request Advance (50%)
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto border border-border-custom rounded-2xl bg-bg-primary">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-border-custom bg-bg-secondary/60 text-text-light uppercase tracking-wider text-[10px]">
+                    <th className="p-4">Target Hotel Property</th>
+                    <th className="p-4">Requested Amount</th>
+                    <th className="p-4">Disbursed Amount</th>
+                    <th className="p-4">Expenses Reason</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4">Admin Audit Notes</th>
+                    <th className="p-4">Date Submitted</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-custom/50 text-text-primary">
+                  {myAdvanceRequests.map((req: any) => {
+                    const isPending = req.status === "PENDING";
+                    const isDisbursed = req.status === "DISBURSED";
+                    const isRejected = req.status === "REJECTED";
+
+                    return (
+                      <tr key={req.id} className="hover:bg-bg-secondary/30 transition">
+                        <td className="p-4">
+                          <div className="font-bold text-text-primary">{req.hotel?.name || "Hotel Property"}</div>
+                          <div className="text-[10px] text-text-light">{req.hotel?.address}</div>
+                        </td>
+                        <td className="p-4 font-extrabold text-theme-secondary text-sm">
+                          BDT {req.requestedAmount?.toLocaleString()}
+                        </td>
+                        <td className="p-4 font-bold text-emerald-600">
+                          {req.disbursedAmount ? `BDT ${req.disbursedAmount.toLocaleString()}` : "-"}
+                        </td>
+                        <td className="p-4 max-w-xs">
+                          <p className="text-xs text-text-secondary line-clamp-2">{req.reason}</p>
+                        </td>
+                        <td className="p-4">
+                          {isPending && (
+                            <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full font-bold text-[10px] inline-flex items-center space-x-1">
+                              <Clock className="h-3 w-3" />
+                              <span>Pending Review</span>
+                            </span>
+                          )}
+                          {isDisbursed && (
+                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold text-[10px] inline-flex items-center space-x-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              <span>Disbursed to Account</span>
+                            </span>
+                          )}
+                          {isRejected && (
+                            <span className="bg-red-50 text-red-700 border border-red-200 px-2.5 py-0.5 rounded-full font-bold text-[10px] inline-flex items-center space-x-1">
+                              <XCircle className="h-3 w-3" />
+                              <span>Declined</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-4 text-xs text-text-light italic max-w-xs">
+                          {req.adminNote || "-"}
+                        </td>
+                        <td className="p-4 text-[11px] text-text-light">
+                          {new Date(req.createdAt).toLocaleString()}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* View 3 & 4: Create / Edit View */}
       {(view === "create" || view === "edit") && (
         <div className="space-y-6">
@@ -786,6 +998,116 @@ export default function HotelPropertyPage() {
                 className="px-6 py-3 border border-border-custom font-bold text-text-secondary hover:bg-bg-secondary transition text-xs rounded-xl cursor-pointer"
               >
                 Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Advance Request Modal */}
+      {showAdvanceModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <form onSubmit={handleSubmitAdvanceRequest} className="bg-bg-primary border border-border-custom p-6 max-w-md w-full rounded-2xl space-y-4 shadow-2xl">
+            <h3 className="text-base font-bold text-text-primary flex items-center space-x-2">
+              <Landmark className="h-5 w-5 text-emerald-600" />
+              <span>Request Advance Payout (Up to 50%)</span>
+            </h3>
+            <p className="text-xs text-text-light leading-relaxed">
+              Select a Hotel Property to request an advance disbursal for maintenance, room prep, or guest catering.
+            </p>
+            
+            <div>
+              <label className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1">Select Hotel Property *</label>
+              <select
+                required
+                value={selectedAdvanceHotelId}
+                onChange={(e) => {
+                  setSelectedAdvanceHotelId(e.target.value);
+                  setAdvanceRequestedAmount("");
+                }}
+                className="w-full p-3 text-xs border border-border-custom bg-bg-secondary text-text-primary rounded-xl outline-none focus:border-theme-primary font-semibold"
+              >
+                <option value="">-- Choose Hotel Property --</option>
+                {myHotels.map((hotel: any) => {
+                  const hBookings = hotelBookings.filter((b: any) => b.hotelId === hotel.id && b.bookingStatus !== "CANCELLED");
+                  const hEscrow = hBookings.reduce((sum: number, b: any) => {
+                    const platformComm = (b.totalAmount || 0) * 0.10;
+                    const hostShare = Math.max(0, (b.paidAmount || 0) - platformComm);
+                    return sum + hostShare;
+                  }, 0);
+                  return (
+                    <option key={hotel.id} value={hotel.id}>
+                      {hotel.name} (Net Host Escrow: BDT {hEscrow.toLocaleString()})
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            {selectedAdvanceHotelId && (
+              <div className="bg-bg-secondary/60 border border-border-custom/60 p-3 rounded-xl space-y-1.5 text-xs text-text-secondary">
+                <div className="flex justify-between">
+                  <span>Accumulated Escrow:</span>
+                  <span className="font-bold text-text-primary">BDT {selectedHotelTotalEscrow.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Max Allowable Advance (50%):</span>
+                  <span className="font-bold text-emerald-600">BDT {selectedHotelMaxAdvance.toLocaleString()}</span>
+                </div>
+                {selectedHotelAlreadyDisbursed > 0 && (
+                  <div className="flex justify-between text-amber-600">
+                    <span>Already Requested/Disbursed:</span>
+                    <span className="font-bold">BDT {selectedHotelAlreadyDisbursed.toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t border-border-custom/50 pt-1 font-bold">
+                  <span>Remaining Allowable Advance:</span>
+                  <span className="text-theme-secondary">BDT {selectedHotelRemainingAdvance.toLocaleString()}</span>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1">Advance Amount Requested (BDT) *</label>
+              <input
+                type="number"
+                min="1"
+                max={selectedHotelRemainingAdvance || 999999}
+                required
+                value={advanceRequestedAmount}
+                onChange={(e) => setAdvanceRequestedAmount(e.target.value)}
+                placeholder={`Enter amount up to BDT ${selectedHotelRemainingAdvance ? selectedHotelRemainingAdvance.toLocaleString() : "0"}`}
+                className="w-full p-3 text-xs border border-border-custom bg-bg-secondary text-text-primary rounded-xl outline-none focus:border-theme-primary font-bold"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1">Reason / Expenses Description *</label>
+              <textarea
+                rows={3}
+                required
+                value={advanceReason}
+                onChange={(e) => setAdvanceReason(e.target.value)}
+                placeholder="Describe why advance payout is required..."
+                className="w-full p-3 text-xs border border-border-custom bg-bg-secondary text-text-primary rounded-xl outline-none focus:border-theme-primary"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowAdvanceModal(false)}
+                className="px-4 py-2 border border-border-custom text-text-secondary text-xs font-bold rounded-xl hover:bg-bg-secondary transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmittingAdvance || !selectedAdvanceHotelId || selectedHotelRemainingAdvance <= 0}
+                className="px-5 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition disabled:opacity-50 cursor-pointer flex items-center space-x-1"
+              >
+                {isSubmittingAdvance ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                <span>{isSubmittingAdvance ? "Submitting..." : "Submit Request"}</span>
               </button>
             </div>
           </form>

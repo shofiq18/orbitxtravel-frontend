@@ -247,4 +247,11 @@ h2, h3, h4, h5, h6 {
   animation-play-state: paused !important;
 }
 
+/* Force native date input calendar picker indicator to render pure white */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(100%);
+  cursor: pointer;
+}
+
+
 

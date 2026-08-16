@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { useGetHotelsQuery, useGetHotelByIdQuery } from "@/redux/api/hotel/hotelApi";
@@ -13,10 +13,14 @@ export default function TourB2BRoomsPage() {
   const router = useRouter();
 
   // Route protection - ensure user is tour organizer
-  if (!user || user.currentRole !== "tour_organizer") {
-    toast.error("Access Denied: Please log in as a Tour Organizer to view this portal.");
-    router.push("/");
-  }
+  useEffect(() => {
+    if (!user) {
+      router.push("/login");
+    } else if (user.currentRole !== "tour_organizer") {
+      toast.error("Access Denied: Please log in as a Tour Organizer to view this portal.");
+      router.push("/");
+    }
+  }, [user, router]);
 
   // API Hooks
   const [searchHotelName, setSearchHotelName] = useState("");

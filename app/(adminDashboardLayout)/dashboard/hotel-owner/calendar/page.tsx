@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import {
@@ -8,7 +8,7 @@ import {
   useBlockRoomDatesMutation,
   useGetBlockedRoomDatesQuery,
 } from "@/redux/api/hotel/hotelApi";
-import { Calendar, ShieldCheck, Loader2, Info } from "lucide-react";
+import { Calendar as CalendarIcon, ShieldCheck, Loader2, Lock, ArrowRight, Bed, Calendar, Info } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
@@ -17,10 +17,14 @@ export default function HotelCalendarPage() {
   const router = useRouter();
 
   // Route protection - ensure user is hotel owner
-  if (!user || user.currentRole !== "hotel_owner") {
-    toast.error("Access Denied: Please log in as a Hotel Owner to view this portal.");
-    router.push("/");
-  }
+  useEffect(() => {
+    if (!user) {
+      router.push("/login");
+    } else if (user.currentRole !== "hotel_owner") {
+      toast.error("Access Denied: Please log in as a Hotel Owner to view this portal.");
+      router.push("/");
+    }
+  }, [user, router]);
 
   // API Hooks
   const { data: hotelsResponse, isLoading: isLoadingHotels, refetch: refetchHotels } = useGetHotelsQuery({

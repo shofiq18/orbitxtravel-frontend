@@ -4,7 +4,11 @@ import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/redux/store";
 import { useGetBookingsByUserQuery } from "@/redux/api/booking/bookingApi";
-import { useUpdateProfileMutation, useUploadFileMutation } from "@/redux/api/auth/authApi";
+import { 
+  useUpdateProfileMutation, 
+  useUploadFileMutation, 
+  useChangePasswordMutation 
+} from "@/redux/api/auth/authApi";
 import { updateUserInfo } from "@/feature/user/userSlice";
 import { 
   User, 
@@ -22,7 +26,12 @@ import {
   ArrowRight,
   Camera,
   Save,
-  UserCheck
+  UserCheck,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+  AlertCircle,
+  ShieldCheck
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
@@ -43,11 +52,16 @@ export default function DashboardProfilePage() {
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // Show/Hide password toggles
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // API Mutations
   const [updateProfile, { isLoading: isUpdatingProfile }] = useUpdateProfileMutation();
   const [uploadFile] = useUploadFileMutation();
+  const [changePassword, { isLoading: isChangingPassword }] = useChangePasswordMutation();
 
   const { data: bookingsResponse, isLoading: isLoadingBookings } = useGetBookingsByUserQuery(undefined, {
     skip: !user || isHostOrAdmin,
@@ -61,11 +75,28 @@ export default function DashboardProfilePage() {
   }, [user]);
 
   // Route protection - ensure user is logged in
-  if (!user) {
-    toast.error("Access Denied: Please log in first.");
-    router.push("/login");
-    return null;
-  }
+  useEffect(() => {
+    if (!user) {
+      router.push("/login");
+    }
+  }, [user, router]);
+
+  // Password strength calculation helper
+  const getPasswordStrength = (pwd: string) => {
+    if (!pwd) return { score: 0, label: "", color: "bg-slate-200" };
+    let score = 0;
+    if (pwd.length >= 6) score += 1;
+    if (pwd.length >= 8) score += 1;
+    if (/[A-Z]/.test(pwd)) score += 1;
+    if (/[0-9]/.test(pwd)) score += 1;
+    if (/[^A-Za-z0-9]/.test(pwd)) score += 1;
+
+    if (score <= 2) return { score, label: "Weak", color: "bg-amber-500", text: "text-amber-600" };
+    if (score <= 4) return { score, label: "Medium", color: "bg-blue-500", text: "text-blue-600" };
+    return { score, label: "Strong", color: "bg-emerald-500", text: "text-emerald-600" };
+  };
+
+  const pwdStrength = getPasswordStrength(newPassword);
 
   // Helper to format role names cleanly in UI
   const formatRole = (roleStr: string | undefined) => {
@@ -120,7 +151,7 @@ export default function DashboardProfilePage() {
 
       if (avatarUrl) {
         payload.businessProfile = {
-          ...(user.businessProfile || {}),
+          ...(user?.businessProfile || {}),
           avatarUrl,
         };
       }
@@ -155,38 +186,19 @@ export default function DashboardProfilePage() {
     }
 
     try {
-      setIsChangingPassword(true);
       toast.loading("Updating security credentials...", { id: "chg-pwd" });
 
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
-      const token = localStorage.getItem("token");
+      const res = await changePassword({
+        oldPassword,
+        newPassword,
+      }).unwrap();
 
-      const response = await fetch(`${apiBase}/users/change-password`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `${token}`,
-        },
-        body: JSON.stringify({
-          oldPassword,
-          newPassword,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "Failed to update password.");
-      }
-
-      toast.success("Password changed successfully!", { id: "chg-pwd" });
+      toast.success(res?.message || "Password changed successfully!", { id: "chg-pwd" });
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (error: any) {
-      toast.error(error?.message || "Failed to change password.", { id: "chg-pwd" });
-    } finally {
-      setIsChangingPassword(false);
+      toast.error(error?.data?.message || error?.message || "Failed to change password.", { id: "chg-pwd" });
     }
   };
 
@@ -195,7 +207,7 @@ export default function DashboardProfilePage() {
       {/* Page Header */}
       <div className="border-b border-border-custom pb-5">
         <h1 className="text-2xl font-semibold text-text-primary tracking-wide">My Account & Profile</h1>
-        <p className="text-sm text-text-light mt-1">Manage your credentials, update your profile picture, and change password.</p>
+        <p className="text-sm text-text-light mt-1">Manage your credentials, update your profile picture, and configure account password.</p>
       </div>
 
       <div className={`grid grid-cols-1 ${isHostOrAdmin ? "max-w-4xl" : "lg:grid-cols-3"} gap-8`}>
@@ -219,7 +231,7 @@ export default function DashboardProfilePage() {
                 <label htmlFor="user-avatar-file-upload" className="cursor-pointer block relative">
                   <div className="w-24 h-24 rounded-full overflow-hidden bg-theme-primary/10 flex items-center justify-center text-theme-primary border-2 border-theme-primary/30 shadow-md">
                     {avatarUrl ? (
-                      <img src={avatarUrl} alt={user.fullName} className="w-full h-full object-cover" />
+                      <img src={avatarUrl} alt={user?.fullName || "User"} className="w-full h-full object-cover" />
                     ) : (
                       <User className="h-12 w-12" />
                     )}
@@ -239,9 +251,9 @@ export default function DashboardProfilePage() {
               </div>
 
               <div>
-                <h2 className="text-lg font-bold text-text-primary">{user.fullName}</h2>
+                <h2 className="text-lg font-bold text-text-primary">{user?.fullName}</h2>
                 <span className="inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-3 py-1 mt-1 text-white bg-theme-primary rounded-full">
-                  {formatRole(user.currentRole || "traveler")}
+                  {formatRole(user?.currentRole || "traveler")}
                 </span>
               </div>
             </div>
@@ -256,12 +268,13 @@ export default function DashboardProfilePage() {
               </div>
               <div className="flex items-center justify-between text-text-secondary">
                 <span className="text-text-light font-medium">Email Address</span>
-                <span className="text-text-primary truncate max-w-[200px] font-semibold">{user.email}</span>
+                <span className="text-text-primary truncate max-w-[200px] font-semibold">{user?.email}</span>
               </div>
             </div>
           </div>
 
           <div className={`grid grid-cols-1 ${isHostOrAdmin ? "md:grid-cols-2" : ""} gap-6`}>
+            
             {/* Edit Name & Profile Card */}
             <form onSubmit={handleUpdateProfileSubmit} className="bg-bg-primary border border-border-custom p-6 space-y-4 rounded-2xl shadow-xs">
               <h3 className="text-sm font-bold text-text-primary border-b border-border-custom pb-2 flex items-center space-x-2">
@@ -277,7 +290,7 @@ export default function DashboardProfilePage() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Enter your full name"
-                  className="w-full px-3 py-2 text-xs border border-border-custom bg-bg-secondary text-text-primary rounded-xl outline-none focus:border-theme-primary"
+                  className="w-full px-3.5 py-2.5 text-xs border border-border-custom bg-bg-secondary text-text-primary rounded-xl outline-none focus:border-theme-primary font-medium"
                 />
               </div>
 
@@ -293,56 +306,130 @@ export default function DashboardProfilePage() {
 
             {/* Change Password Card */}
             <form onSubmit={handleChangePasswordSubmit} className="bg-bg-primary border border-border-custom p-6 space-y-4 rounded-2xl shadow-xs">
-              <h3 className="text-sm font-bold text-text-primary border-b border-border-custom pb-2 flex items-center space-x-2">
-                <KeyRound className="h-4 w-4 text-theme-primary" />
-                <span>Change Password</span>
-              </h3>
+              <div className="flex items-center justify-between border-b border-border-custom pb-2">
+                <h3 className="text-sm font-bold text-text-primary flex items-center space-x-2">
+                  <KeyRound className="h-4 w-4 text-theme-primary" />
+                  <span>Change Password</span>
+                </h3>
+                <span className="text-[10px] text-text-light font-medium flex items-center gap-1">
+                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+                  <span>Encrypted</span>
+                </span>
+              </div>
 
+              {/* Current Password Field */}
               <div>
                 <label className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1">Current Password *</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Enter current password"
-                  value={oldPassword}
-                  onChange={(e) => setOldPassword(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-border-custom bg-bg-secondary text-text-primary rounded-xl outline-none focus:border-theme-primary"
-                />
+                <div className="relative">
+                  <input
+                    type={showOldPassword ? "text" : "password"}
+                    required
+                    placeholder="Enter current password"
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    className="w-full pl-3.5 pr-10 py-2.5 text-xs border border-border-custom bg-bg-secondary text-text-primary rounded-xl outline-none focus:border-theme-primary font-medium"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowOldPassword(!showOldPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-light hover:text-text-primary transition"
+                  >
+                    {showOldPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
 
+              {/* New Password Field */}
               <div>
                 <label className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1">New Password *</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Min 6 characters"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-border-custom bg-bg-secondary text-text-primary rounded-xl outline-none focus:border-theme-primary"
-                />
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    required
+                    placeholder="Min 6 characters"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full pl-3.5 pr-10 py-2.5 text-xs border border-border-custom bg-bg-secondary text-text-primary rounded-xl outline-none focus:border-theme-primary font-medium"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-light hover:text-text-primary transition"
+                  >
+                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+
+                {/* Password Strength Indicator */}
+                {newPassword && (
+                  <div className="mt-2 space-y-1">
+                    <div className="flex justify-between items-center text-[10px]">
+                      <span className="text-text-light">Password Strength:</span>
+                      <span className={`font-extrabold ${pwdStrength.text}`}>{pwdStrength.label}</span>
+                    </div>
+                    <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-300 ${pwdStrength.color}`}
+                        style={{ width: `${(pwdStrength.score / 5) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
+              {/* Confirm New Password Field */}
               <div>
                 <label className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-1">Confirm New Password *</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Re-enter new password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-border-custom bg-bg-secondary text-text-primary rounded-xl outline-none focus:border-theme-primary"
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    required
+                    placeholder="Re-enter new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className={`w-full pl-3.5 pr-10 py-2.5 text-xs border bg-bg-secondary text-text-primary rounded-xl outline-none transition font-medium ${
+                      confirmPassword && confirmPassword !== newPassword
+                        ? "border-red-400 focus:border-red-500"
+                        : confirmPassword && confirmPassword === newPassword
+                        ? "border-emerald-400 focus:border-emerald-500"
+                        : "border-border-custom focus:border-theme-primary"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-light hover:text-text-primary transition"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+
+                {/* Password match indicator */}
+                {confirmPassword && (
+                  <div className="mt-1 flex items-center gap-1 text-[10px]">
+                    {confirmPassword === newPassword ? (
+                      <span className="text-emerald-600 font-bold flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" /> Passwords match
+                      </span>
+                    ) : (
+                      <span className="text-red-500 font-bold flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" /> Passwords do not match
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               <button
                 type="submit"
                 disabled={isChangingPassword}
-                className="w-full bg-theme-primary text-white font-bold py-2.5 px-4 text-xs rounded-xl hover:bg-opacity-95 transition flex items-center justify-center space-x-2 cursor-pointer shadow-xs"
+                className="w-full bg-theme-primary text-white font-bold py-2.5 px-4 text-xs rounded-xl hover:bg-opacity-95 transition flex items-center justify-center space-x-2 cursor-pointer shadow-xs disabled:opacity-50"
               >
                 {isChangingPassword ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
                 <span>Update Password</span>
               </button>
             </form>
+
           </div>
 
         </div>
@@ -359,7 +446,7 @@ export default function DashboardProfilePage() {
                 <button
                   type="button"
                   onClick={() => router.push("/dashboard/my-bookings")}
-                  className="text-xs font-bold text-theme-primary hover:underline flex items-center space-x-1"
+                  className="text-xs font-bold text-theme-primary hover:underline flex items-center space-x-1 cursor-pointer"
                 >
                   <span>View Full Ledger ({myBookings.length})</span>
                   <ArrowRight className="h-3.5 w-3.5" />

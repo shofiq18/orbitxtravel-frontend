@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { useTriggerPreTripAlertsMutation } from "@/redux/api/admin/adminApi";
@@ -12,10 +13,14 @@ export default function AdminAlertsPage() {
   const router = useRouter();
 
   // Route protection - ensure user is admin
-  if (!user || user.currentRole !== "admin") {
-    toast.error("Access Denied: Admin privileges required.");
-    router.push("/");
-  }
+  useEffect(() => {
+    if (!user) {
+      router.push("/login");
+    } else if (user.currentRole !== "admin") {
+      toast.error("Access Denied: Admin privileges required.");
+      router.push("/");
+    }
+  }, [user, router]);
 
   // Mutations
   const [triggerAlerts, { isLoading: isTriggering }] = useTriggerPreTripAlertsMutation();

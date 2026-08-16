@@ -26,9 +26,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${recoleta.variable} antialiased`}
+        suppressHydrationWarning
       >
         <ReduxProvider>{children}</ReduxProvider>
         <Toaster position="top-right" reverseOrder={false} />
