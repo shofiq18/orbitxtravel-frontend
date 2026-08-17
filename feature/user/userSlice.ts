@@ -6,6 +6,9 @@ export interface UserProfile {
   fullName?: string;
   name?: string;
   email: string;
+  profileImage?: string | null;
+  avatar?: string | null;
+  image?: string | null;
   roles?: string[];
   currentRole?: string;
   isVerified?: boolean;

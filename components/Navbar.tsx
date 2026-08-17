@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
@@ -12,12 +12,42 @@ import { toast } from "react-hot-toast";
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const lastScrollY = useRef(0);
 
   const router = useRouter();
   const dispatch = useDispatch();
+  const pathname = usePathname();
+  const isHomePage = pathname === "/";
 
   const { user } = useSelector((state: RootState) => state.user);
+  const avatarUrl = user?.profileImage || user?.avatar || user?.image || undefined;
   const [switchRoleApi] = useSwitchRoleMutation();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY > 50) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+
+      // Hide navbar when scrolling down past 80px, show when scrolling up
+      if (currentScrollY > lastScrollY.current && currentScrollY > 80) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -46,8 +76,22 @@ export default function Navbar() {
     }
   };
 
+  const getNavClasses = () => {
+    const baseClasses = "z-50 w-full transition-transform duration-300 ease-in-out";
+    const visibilityClass = isVisible || isMobileMenuOpen ? "translate-y-0" : "-translate-y-full";
+
+    if (!isScrolled) {
+      if (isHomePage) {
+        return `${baseClasses} absolute top-0 left-0 right-0 bg-gradient-to-b from-black/70 via-black/30 to-transparent ${visibilityClass}`;
+      }
+      return `${baseClasses} relative bg-[#0B0F19] text-white border-b border-gray-800/80 shadow-md ${visibilityClass}`;
+    }
+
+    return `${baseClasses} fixed top-0 left-0 right-0 bg-black text-white border-b border-gray-800/80 shadow-xl ${visibilityClass}`;
+  };
+
   return (
-    <nav className="absolute top-0 left-0 right-0 z-50 w-full bg-gradient-to-b from-black/70 via-black/30 to-transparent transition-all">
+    <nav className={getNavClasses()}>
       <div className="w-full mx-auto px-8 lg:px-16 h-20 flex items-center justify-between">
         
         {/* Brand Logo & Name (No background behind logo icon) */}
@@ -72,23 +116,52 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* Right Action Stack (Only Sign In link with NO background, NO SignUp button) */}
-        <div className="hidden md:flex items-center space-x-5">
+        {/* Right Action Stack */}
+        <div className="hidden md:flex items-center space-x-4">
+          <Link
+            href="/become-host"
+            className="text-xs sm:text-sm font-bold text-white bg-[#0061AA] hover:bg-[#004b85] transition-all px-4.5 py-2 rounded-full shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] shrink-0"
+          >
+            Become a Host
+          </Link>
+
           {user ? (
             <div className="flex items-center space-x-4">
-              {/* User Profile Pill */}
+              {/* User Profile Round Circle Avatar + Chevron */}
               <div className="relative group">
-                <button className="flex items-center space-x-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full text-white hover:bg-white/20 transition-all cursor-pointer">
-                  <User className="h-4 w-4 text-white" />
-                  <span className="text-sm font-bold">{user.fullName}</span>
-                  <ChevronDown className="h-3.5 w-3.5 text-white/80" />
+                <button className="flex items-center space-x-1.5 p-0.5 rounded-full text-white hover:opacity-90 transition-all cursor-pointer">
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt={user.fullName || user.name || "User"}
+                      className="w-9 h-9 rounded-full object-cover border-2 border-white/40 shadow-md hover:scale-105 transition-transform"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-white/15 border-2 border-white/30 flex items-center justify-center text-white hover:scale-105 transition-transform shadow-md">
+                      <User className="h-4.5 w-4.5 text-white shrink-0" />
+                    </div>
+                  )}
+                  <ChevronDown className="h-3.5 w-3.5 text-white/80 shrink-0 group-hover:rotate-180 transition-transform duration-200" />
                 </button>
 
                 <div className="absolute right-0 top-full pt-2 z-50 hidden group-hover:block hover:block w-56">
                   <div className="bg-slate-900/95 backdrop-blur-2xl text-white shadow-2xl py-2 rounded-2xl border-none">
-                    <div className="px-4 py-2.5 border-b border-white/10">
-                      <p className="text-sm font-bold text-white">{user.fullName}</p>
-                      <p className="text-xs text-slate-300 truncate">{user.email}</p>
+                    <div className="px-4 py-2.5 border-b border-white/10 flex items-center space-x-3">
+                      {avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt={user.fullName || user.name || "User"}
+                          className="h-9 w-9 rounded-full object-cover border border-white/30 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0">
+                          <User className="h-5 w-5" />
+                        </div>
+                      )}
+                      <div className="overflow-hidden">
+                        <p className="text-sm font-bold text-white truncate">{user.fullName}</p>
+                        <p className="text-xs text-slate-300 truncate">{user.email}</p>
+                      </div>
                     </div>
                     <div className="py-1">
                       {user.currentRole && ["admin", "hotel_owner", "tour_organizer"].includes(user.currentRole) ? (

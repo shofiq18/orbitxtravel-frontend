@@ -32,7 +32,8 @@ import {
   Check,
   Building2,
   ArrowRight,
-  ArrowUpRight
+  ArrowUpRight,
+  Quote
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
@@ -45,6 +46,7 @@ export default function Home() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [hoveredAdvantageCard, setHoveredAdvantageCard] = useState<number | null>(null);
 
   // Filters to send to API
   const [filters, setFilters] = useState<{
@@ -66,6 +68,69 @@ export default function Home() {
 
   const { data: reviewsResponse } = useGetReviewsQuery(undefined);
   const reviewsList = reviewsResponse?.data || [];
+
+  const fallbackReviews = [
+    {
+      id: "1",
+      name: "Sajid Hasan",
+      comment: "Lorem ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries.....",
+      rating: 5,
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
+      hotel: { name: "SAJEK VALLEY RETREAT", address: "Dhaka, Bangladesh" }
+    },
+    {
+      id: "2",
+      name: "Tanjia Rahman",
+      comment: "Explore a world of possibilities as you book verified host stays with total peace of mind. The instant PDF confirm voucher with host emergency contacts gave us total confidence for our Cox's Bazar check-in.....",
+      rating: 5,
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80",
+      hotel: { name: "OCEAN PARADISE RESORT", address: "Cox's Bazar, Bangladesh" }
+    },
+    {
+      id: "3",
+      name: "Rafiqul Islam",
+      comment: "Escrow protection is a game changer! Funds were released to the host only after our Sreemangal tour departed on time. Super smooth user experience from start to finish on OrbitX Travel.....",
+      rating: 5,
+      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80",
+      hotel: { name: "GRAND SULTAN RESORT", address: "Sylhet, Bangladesh" }
+    },
+    {
+      id: "4",
+      name: "Scarlett Thomas",
+      comment: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s.....",
+      rating: 5,
+      avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80",
+      hotel: { name: "SINGAPORE CITY HOTEL", address: "Singapore" }
+    },
+    {
+      id: "5",
+      name: "Nusrat Jahan",
+      comment: "Super smooth user experience. The SMS departure reminders 24 hours prior saved our trip from any confusion! Verified vendors and instant confirmed stays on OrbitX Travel.....",
+      rating: 5,
+      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80",
+      hotel: { name: "BANDARBAN HILL RESORT", address: "Bandarban, Bangladesh" }
+    },
+    {
+      id: "6",
+      name: "Emily Watson",
+      comment: "Booking direct tour packages with zero middleman markups was the best travel decision we made this year. Highly recommended platform for all travelers.....",
+      rating: 5,
+      avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=120&auto=format&fit=crop&q=80",
+      hotel: { name: "PARADISE COVE HOTEL", address: "Chittagong, Bangladesh" }
+    }
+  ];
+
+  const [activeReviewIndex, setActiveReviewIndex] = useState<number>(3);
+  const reviewsToDisplay = reviewsList.length > 0 ? reviewsList : fallbackReviews;
+
+  // Auto carousel effect replacing active review card every 3 seconds
+  useEffect(() => {
+    if (!reviewsToDisplay || reviewsToDisplay.length === 0) return;
+    const interval = setInterval(() => {
+      setActiveReviewIndex((prev) => (prev + 1) % reviewsToDisplay.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [reviewsToDisplay.length]);
 
   const [newsletterEmail, setNewsletterEmail] = useState("");
 
@@ -264,14 +329,13 @@ export default function Home() {
 
       {/* Main Listings Grid */}
       <section className="w-full mx-auto px-8 lg:px-16">
-        <div className="flex items-center justify-between mb-8 border-b border-neutral-200 pb-4">
-          <div>
-            <h3 className="text-2xl font-extrabold text-black uppercase tracking-tight">Active Tour Packages</h3>
-            <p className="text-xs text-neutral-500 mt-1 font-medium">Direct bookings on verified seat locks.</p>
-          </div>
-          <div className="text-xs font-extrabold text-black bg-[#f5f5f5] border border-neutral-200 px-4 py-2 rounded-full">
-            {packagesList.length} Packages Found
-          </div>
+        <div className="space-y-1.5 mb-8 border-b border-neutral-200 pb-4">
+          <h3 className="text-3xl sm:text-5xl font-serif font-medium text-black tracking-normal leading-tight">
+            Tour Packages
+          </h3>
+          <p className="text-xs sm:text-sm text-neutral-500 font-normal">
+            Direct bookings on verified seat locks.
+          </p>
         </div>
 
         {/* Loading / Error States */}
@@ -366,15 +430,19 @@ export default function Home() {
 
       {/* Featured Hotels Section */}
       <section className="w-full mx-auto px-8 lg:px-16 mt-16">
-        <div className="flex items-center justify-between mb-8 border-b border-neutral-200 pb-4">
-          <div>
-            <h3 className="text-2xl font-extrabold text-black uppercase tracking-tight">Featured Hotels</h3>
-            <p className="text-xs text-neutral-500 mt-1 font-medium">Direct bookings on verified premium hotels & stays.</p>
+        <div className="space-y-1.5 mb-8 border-b border-neutral-200 pb-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-3xl sm:text-5xl font-serif font-medium text-black tracking-normal leading-tight">
+              Featured Hotels
+            </h3>
+            <Link href="/hotels" className="text-xs font-bold text-black hover:underline flex items-center gap-1 uppercase tracking-wider">
+              <span>View All Properties</span>
+              <ChevronRight className="h-4 w-4" />
+            </Link>
           </div>
-          <Link href="/hotels" className="text-xs font-extrabold text-black hover:underline flex items-center gap-1 uppercase tracking-wider">
-            <span>View All Properties</span>
-            <ChevronRight className="h-4 w-4" />
-          </Link>
+          <p className="text-xs sm:text-sm text-neutral-500 font-normal">
+            Direct bookings on verified premium hotels & stays.
+          </p>
         </div>
 
         {/* Loading / Error States for Hotels */}
@@ -452,95 +520,90 @@ export default function Home() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 3D SCALE-UP SECTION 1: THE ORBITX ADVANTAGE */}
+      {/* THE ORBITX ADVANTAGE - EXACT FLUTTERWAVE OVERLAPPING CARDS */}
       {/* ========================================================================= */}
-      <section className="w-full mx-auto px-4 sm:px-8 lg:px-16 mt-24">
-        <div className="bg-[#f5f5f5] rounded-3xl p-8 sm:p-14 border border-neutral-200/80 space-y-10">
+      <section className="w-full bg-[#141414] py-24 sm:py-32 px-4 sm:px-8 lg:px-16 mt-20 text-white overflow-hidden">
+        <div className="max-w-7xl mx-auto space-y-16">
           
           {/* Section Header */}
-          <div className="text-center max-w-3xl mx-auto space-y-3">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-neutral-500 block">
-              THE ORBITX ADVANTAGE
-            </span>
-            <h3 className="text-3xl sm:text-4xl font-extrabold text-black uppercase tracking-tight">
-              WHY TRAVELERS & HOSTS CHOOSE ORBITX
-            </h3>
-            <p className="text-xs sm:text-sm text-neutral-600 max-w-xl mx-auto font-medium">
-              We eliminate middleman markups, connect you directly with verified tour hosts, and hold funds in escrow until departure.
+          <div className="text-center max-w-3xl mx-auto space-y-4">
+            <h2 className="text-3xl sm:text-5xl md:text-6xl font-serif font-bold text-white tracking-tight leading-[1.15]">
+              Endless travel possibilities for every <span className="font-serif italic font-normal text-[#0061AA]">explorer</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-neutral-400 max-w-xl mx-auto font-normal leading-relaxed">
+              OrbitX offers a host of seamless products for individuals, ensuring smooth transactions and efficient money management.
             </p>
           </div>
 
-          {/* 4 3D Scale Up Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            
-            {/* Card 1 */}
-            <div className="bg-white border border-neutral-200/80 p-8 rounded-3xl space-y-4 hover:scale-[1.04] hover:-translate-y-2.5 hover:shadow-2xl transition-all duration-300 ease-out cursor-pointer group shadow-sm">
-              <div className="w-12 h-12 bg-btn-primary text-btn-text-primary rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
-                <Ticket className="h-6 w-6" />
-              </div>
-              <h4 className="text-base font-extrabold text-black uppercase tracking-wide">Zero Hidden Fees</h4>
-              <p className="text-xs text-neutral-600 leading-relaxed font-medium">
-                Pay minimum seat lock deposits or direct hotel stay rates with 100% price transparency and zero surprise booking charges.
-              </p>
-              <div className="pt-2">
-                <span className="inline-flex items-center text-xs font-bold text-black border-b border-black pb-0.5 group-hover:opacity-70 transition">
-                  <span>Direct Pricing</span>
-                  <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
-                </span>
-              </div>
-            </div>
+          {/* Flutterwave Exact Overlapping Stacked Cards (4 Cards) */}
+          <div className="flex flex-col lg:flex-row items-center justify-center pt-4 pb-12 overflow-visible max-w-6xl mx-auto">
+            {[
+              {
+                title: "Direct host tour bookings",
+                desc: "Experience 100% transparent direct pricing with zero middleman markups. Lock tour package seats directly with verified hosts and organizers right",
+                link: "here",
+                href: "/tours"
+              },
+              {
+                title: "Verified stay & hotel escrow",
+                desc: "Explore verified hotel stays with total peace of mind. Every host undergoes strict NID & trade license verification while funds stay protected in escrow right",
+                link: "here",
+                href: "/hotels"
+              },
+              {
+                title: "Instant PDF confirm vouchers",
+                desc: "Receive automated instant PDF confirm vouchers complete with reference UUIDs, QR verification, and host emergency contacts right",
+                link: "here",
+                href: "/checkout"
+              },
+              {
+                title: "24/7 Departure & stay alerts",
+                desc: "Stay informed before your trip with automated pre-trip email & SMS reminders dispatched 24 hours prior to departure and check-in dates right",
+                link: "here",
+                href: "/contact"
+              }
+            ].map((card, idx) => {
+              // Stack order: Card 0 (z-10), Card 1 (z-20), Card 2 (z-30), Card 3 (z-40)
+              const zIndex = (idx + 1) * 10;
+              const marginClass = idx === 0 ? "ml-0" : "-mt-10 lg:-mt-0 lg:-ml-32";
 
-            {/* Card 2 */}
-            <div className="bg-white border border-neutral-200/80 p-8 rounded-3xl space-y-4 hover:scale-[1.04] hover:-translate-y-2.5 hover:shadow-2xl transition-all duration-300 ease-out cursor-pointer group shadow-sm">
-              <div className="w-12 h-12 bg-btn-primary text-btn-text-primary rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
-                <ShieldCheck className="h-6 w-6" />
-              </div>
-              <h4 className="text-base font-extrabold text-black uppercase tracking-wide">Verified Vendors</h4>
-              <p className="text-xs text-neutral-600 leading-relaxed font-medium">
-                Every hotel owner and tour organizer undergoes strict manual verification including trade license and NID authentication.
-              </p>
-              <div className="pt-2">
-                <span className="inline-flex items-center text-xs font-bold text-black border-b border-black pb-0.5 group-hover:opacity-70 transition">
-                  <span>100% Vetted Hosts</span>
-                  <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
-                </span>
-              </div>
-            </div>
+              // Calculate horizontal slide displacement:
+              // Any card after the currently hovered card slides right by 180px
+              let translateX = "translate-x-0";
+              if (hoveredAdvantageCard !== null && idx > hoveredAdvantageCard) {
+                translateX = "lg:translate-x-[110px]";
+              }
 
-            {/* Card 3 */}
-            <div className="bg-white border border-neutral-200/80 p-8 rounded-3xl space-y-4 hover:scale-[1.04] hover:-translate-y-2.5 hover:shadow-2xl transition-all duration-300 ease-out cursor-pointer group shadow-sm">
-              <div className="w-12 h-12 bg-btn-primary text-btn-text-primary rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
-                <FileText className="h-6 w-6" />
-              </div>
-              <h4 className="text-base font-extrabold text-black uppercase tracking-wide">Instant PDF Vouchers</h4>
-              <p className="text-xs text-neutral-600 leading-relaxed font-medium">
-                Automated instant PDF voucher generation with reference UUIDs, QR verification, and host emergency contact guide.
-              </p>
-              <div className="pt-2">
-                <span className="inline-flex items-center text-xs font-bold text-black border-b border-black pb-0.5 group-hover:opacity-70 transition">
-                  <span>Instant Confirmation</span>
-                  <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
-                </span>
-              </div>
-            </div>
-
-            {/* Card 4 */}
-            <div className="bg-white border border-neutral-200/80 p-8 rounded-3xl space-y-4 hover:scale-[1.04] hover:-translate-y-2.5 hover:shadow-2xl transition-all duration-300 ease-out cursor-pointer group shadow-sm">
-              <div className="w-12 h-12 bg-btn-primary text-btn-text-primary rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
-                <Clock className="h-6 w-6" />
-              </div>
-              <h4 className="text-base font-extrabold text-black uppercase tracking-wide">24/7 Departure Alerts</h4>
-              <p className="text-xs text-neutral-600 leading-relaxed font-medium">
-                Automated pre-trip email & SMS reminders dispatched 24 hours prior to package departure and stay check-in dates.
-              </p>
-              <div className="pt-2">
-                <span className="inline-flex items-center text-xs font-bold text-black border-b border-black pb-0.5 group-hover:opacity-70 transition">
-                  <span>Automated Dispatch</span>
-                  <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
-                </span>
-              </div>
-            </div>
-
+              return (
+                <div
+                  key={idx}
+                  onMouseEnter={() => setHoveredAdvantageCard(idx)}
+                  onMouseLeave={() => setHoveredAdvantageCard(null)}
+                  style={{ zIndex }}
+                  className={`
+                    relative w-full lg:w-[430px] shrink-0 min-h-[200px] sm:min-h-[230px]
+                    rounded-[28px] p-6 sm:p-8 cursor-pointer
+                    transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
+                    flex flex-col justify-start space-y-4 border border-white/5
+                    shadow-[0_20px_50px_rgba(0,0,0,0.65)] bg-[#313131] hover:bg-[#2c2c2c]
+                    ${marginClass} ${translateX}
+                  `}
+                >
+                  <h3 className="text-base sm:text-xl font-bold text-white tracking-tight leading-snug">
+                    {card.title}
+                  </h3>
+                  <p className="text-xs sm:text-[13px] text-neutral-300 leading-relaxed font-normal">
+                    {card.desc}{" "}
+                    <Link 
+                      href={card.href} 
+                      className="underline font-medium text-white hover:text-[#0061AA] transition-colors inline-block ml-0.5"
+                    >
+                      {card.link}
+                    </Link>
+                  </p>
+                </div>
+              );
+            })}
           </div>
 
         </div>
@@ -553,13 +616,13 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-0 w-full">
           
           {/* Image Card 1: Tour Organizers */}
-          <div className="relative w-full h-[550px] sm:h-[680px] bg-black overflow-hidden group cursor-pointer">
+          <div className="relative w-full h-[550px] sm:h-[680px] overflow-hidden group cursor-pointer">
             <img
-              src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1200&auto=format&fit=crop&q=80"
+              src="/tour-become.avif"
               alt="Become Tour Host"
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent z-10"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/25 to-transparent z-10"></div>
 
             <div className="absolute bottom-0 left-0 right-0 p-8 sm:p-14 z-20 space-y-4 text-left">
               <span className="text-xs font-bold tracking-wider text-white/90 block">
@@ -582,11 +645,11 @@ export default function Home() {
           {/* Image Card 2: Hotel Owners */}
           <div className="relative w-full h-[550px] sm:h-[680px] bg-black overflow-hidden group cursor-pointer">
             <img
-              src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&auto=format&fit=crop&q=80"
+              src="/hotel-1.jpg"
               alt="Become Hotel Owner"
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent z-10"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/25 to-transparent z-10"></div>
 
             <div className="absolute bottom-0 left-0 right-0 p-8 sm:p-14 z-20 space-y-4 text-left">
               <span className="text-xs font-bold tracking-wider text-white/90 block">
@@ -610,195 +673,176 @@ export default function Home() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 3D SCALE-UP SECTION 3: TRUST & IMPACT STATS COUNTER */}
+      {/* SECTION 3: TRUST & IMPACT STATS (EXACT FULL-BLEED DESIGN MATCHING REFERENCE) */}
       {/* ========================================================================= */}
-      <section className="w-full mx-auto px-4 sm:px-8 lg:px-16 my-16">
-        <div className="bg-[#f5f5f5] border border-neutral-200/80 p-8 sm:p-12 rounded-3xl hover:shadow-xl transition-all duration-300">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            
-            <div className="space-y-1 group">
-              <p className="text-4xl sm:text-5xl font-extrabold text-black tracking-tight group-hover:scale-110 transition-transform">10,000+</p>
-              <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest mt-1">Happy Travelers</p>
-            </div>
+      <section className="w-full bg-[#051C2C] py-20 sm:py-28 px-6 sm:px-12 lg:px-20 my-16 text-white overflow-hidden">
+        <div className="max-w-7xl mx-auto space-y-16">
+          
+          {/* Top Row: Headline & Trust Badges */}
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight leading-[1.15] max-w-xl">
+              Trusted by thousands to keep their journey moving
+            </h2>
 
-            <div className="space-y-1 group">
-              <p className="text-4xl sm:text-5xl font-extrabold text-black tracking-tight group-hover:scale-110 transition-transform">500+</p>
-              <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest mt-1">Verified Stays & Tours</p>
-            </div>
+            {/* Badges Row */}
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+              <div className="bg-white/10 backdrop-blur-md border border-white/15 px-3.5 py-2.5 rounded-xl flex items-center space-x-2.5 shadow-lg">
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                <div className="text-left">
+                  <p className="text-[10px] uppercase font-bold tracking-wider text-emerald-400 leading-none">VERIFIED</p>
+                  <p className="text-xs font-semibold text-white leading-tight">Escrow Stays</p>
+                </div>
+              </div>
 
-            <div className="space-y-1 group">
-              <p className="text-4xl sm:text-5xl font-extrabold text-black tracking-tight group-hover:scale-110 transition-transform">99.8%</p>
-              <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest mt-1">On-Time Guarantee</p>
-            </div>
+              <div className="bg-white/10 backdrop-blur-md border border-white/15 px-3.5 py-2.5 rounded-xl flex items-center space-x-2.5 shadow-lg">
+                <Award className="w-5 h-5 text-amber-400" />
+                <div className="text-left">
+                  <p className="text-[10px] uppercase font-bold tracking-wider text-amber-400 leading-none">RATED #1</p>
+                  <p className="text-xs font-semibold text-white leading-tight">Tour Portal</p>
+                </div>
+              </div>
 
-            <div className="space-y-1 group">
-              <p className="text-4xl sm:text-5xl font-extrabold text-black tracking-tight group-hover:scale-110 transition-transform">4.9 / 5.0</p>
-              <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest mt-1">Satisfaction Rating</p>
-            </div>
+              <div className="bg-white/10 backdrop-blur-md border border-white/15 px-3.5 py-2.5 rounded-xl flex items-center space-x-2.5 shadow-lg">
+                <Star className="w-5 h-5 text-sky-400 fill-sky-400" />
+                <div className="text-left">
+                  <p className="text-[10px] uppercase font-bold tracking-wider text-sky-400 leading-none">CUSTOMER CHOICE</p>
+                  <p className="text-xs font-semibold text-white leading-tight">4.9 / 5.0 Rating</p>
+                </div>
+              </div>
 
+              <div className="bg-white/10 backdrop-blur-md border border-white/15 px-3.5 py-2.5 rounded-xl flex items-center space-x-2.5 shadow-lg">
+                <CheckCircle2 className="w-5 h-5 text-blue-400" />
+                <div className="text-left">
+                  <p className="text-[10px] uppercase font-bold tracking-wider text-blue-400 leading-none">GUARANTEE</p>
+                  <p className="text-xs font-semibold text-white leading-tight">Instant PDF</p>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
 
-      {/* ========================================================================= */}
-      {/* 3D SCALE-UP SECTION 4: TRAVELER REVIEWS / MARQUEE */}
-      {/* ========================================================================= */}
-      <section className="w-full py-16 my-16 overflow-hidden border-y border-neutral-200 bg-white">
-        <div className="text-center max-w-2xl mx-auto mb-10 space-y-2 px-8">
-          <span className="text-xs font-extrabold uppercase tracking-widest text-neutral-500 block">
-            REAL REVIEWS
-          </span>
-          <h3 className="text-3xl sm:text-4xl font-extrabold text-black uppercase tracking-tight">
-            WHAT TRAVELERS ARE SAYING
-          </h3>
-          <p className="text-xs sm:text-sm text-neutral-600 font-medium">
-            Authentic experiences shared by verified travelers on OrbitX Travel.
-          </p>
-        </div>
+          {/* Bottom Row: 4 Large Clean Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12 pt-12 border-t border-white/10">
+            <div>
+              <p className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight">
+                10,000<span className="text-[#38bdf8]">+</span>
+              </p>
+              <p className="text-xs sm:text-sm text-neutral-300 font-medium tracking-wide mt-2">
+                happy travelers
+              </p>
+            </div>
 
-        {/* 2-Row Dual Direction Marquee */}
-        <div className="space-y-6 w-full">
-          
-          {/* Row 1: Left Scroll */}
-          <Marquee speed={45} pauseOnHover={true} gradient={false} className="py-2">
-            {reviewsList.map((rev: any, idx: number) => {
-              const ratingValue = rev.rating || 5;
-              return (
-                <div key={`r1-${idx}`} className="px-3.5 py-2">
-                  <div className="w-[360px] sm:w-[420px] h-[250px] bg-white border border-neutral-200 p-7 rounded-3xl text-left flex flex-col justify-between shrink-0 hover:scale-[1.03] hover:-translate-y-1.5 hover:shadow-2xl transition-all duration-300 ease-out cursor-pointer shadow-xs">
-                    <div className="space-y-3">
-                      
-                      {/* Rating & Verified Badge */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-1 text-amber-500">
-                          {[1, 2, 3, 4, 5].map((s) => (
-                            <Star key={s} className={`h-4 w-4 ${s <= ratingValue ? "fill-black stroke-black" : "text-neutral-200"}`} />
-                          ))}
-                          <span className="text-xs font-black text-black ml-1.5">{ratingValue.toFixed(1)}</span>
-                        </div>
+            <div>
+              <p className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight">
+                500<span className="text-[#38bdf8]">+</span>
+              </p>
+              <p className="text-xs sm:text-sm text-neutral-300 font-medium tracking-wide mt-2">
+                verified stays & tours
+              </p>
+            </div>
 
-                        <span className="bg-[#f5f5f5] text-black border border-neutral-200 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1">
-                          <Check className="h-3 w-3 text-black" />
-                          <span>Verified Booking</span>
-                        </span>
-                      </div>
+            <div>
+              <p className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight">
+                99.8<span className="text-[#38bdf8]">%</span>
+              </p>
+              <p className="text-xs sm:text-sm text-neutral-300 font-medium tracking-wide mt-2">
+                on-time guarantee
+              </p>
+            </div>
 
-                      {/* Comment */}
-                      <p className="text-xs text-neutral-600 leading-relaxed italic font-normal line-clamp-3">
-                        &ldquo;{rev.comment}&rdquo;
-                      </p>
-                    </div>
-
-                    {/* Author Foot */}
-                    <div className="flex items-center space-x-3 pt-4 border-t border-neutral-100">
-                      <img
-                        src={rev.avatar?.startsWith("http") ? rev.avatar : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"}
-                        alt={rev.name}
-                        className="w-10 h-10 rounded-full object-cover border border-neutral-200 shadow-xs"
-                      />
-                      <div>
-                        <p className="text-sm font-extrabold text-black">{rev.name}</p>
-                        <p className="text-[10px] font-extrabold text-neutral-500 tracking-wider uppercase mt-0.5">
-                          {rev.hotel?.address ? rev.hotel.address.toUpperCase() : "VERIFIED TRAVELER"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </Marquee>
-
-          {/* Row 2: Right Scroll */}
-          <Marquee speed={45} direction="right" pauseOnHover={true} gradient={false} className="py-2">
-            {[...reviewsList].reverse().map((rev: any, idx: number) => {
-              const ratingValue = rev.rating || 5;
-              return (
-                <div key={`r2-${idx}`} className="px-3.5 py-2">
-                  <div className="w-[360px] sm:w-[420px] h-[250px] bg-white border border-neutral-200 p-7 rounded-3xl text-left flex flex-col justify-between shrink-0 hover:scale-[1.03] hover:-translate-y-1.5 hover:shadow-2xl transition-all duration-300 ease-out cursor-pointer shadow-xs">
-                    <div className="space-y-3">
-                      
-                      {/* Rating & Verified Badge */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-1 text-amber-500">
-                          {[1, 2, 3, 4, 5].map((s) => (
-                            <Star key={s} className={`h-4 w-4 ${s <= ratingValue ? "fill-black stroke-black" : "text-neutral-200"}`} />
-                          ))}
-                          <span className="text-xs font-black text-black ml-1.5">{ratingValue.toFixed(1)}</span>
-                        </div>
-
-                        <span className="bg-[#f5f5f5] text-black border border-neutral-200 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1">
-                          <Check className="h-3 w-3 text-black" />
-                          <span>Verified Stay</span>
-                        </span>
-                      </div>
-
-                      {/* Comment */}
-                      <p className="text-xs text-neutral-600 leading-relaxed italic font-normal line-clamp-3">
-                        &ldquo;{rev.comment}&rdquo;
-                      </p>
-                    </div>
-
-                    {/* Author Foot */}
-                    <div className="flex items-center space-x-3 pt-4 border-t border-neutral-100">
-                      <img
-                        src={rev.avatar?.startsWith("http") ? rev.avatar : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"}
-                        alt={rev.name}
-                        className="w-10 h-10 rounded-full object-cover border border-neutral-200 shadow-xs"
-                      />
-                      <div>
-                        <p className="text-sm font-extrabold text-black">{rev.name}</p>
-                        <p className="text-[10px] font-extrabold text-neutral-500 tracking-wider uppercase mt-0.5">
-                          {rev.hotel?.name ? rev.hotel.name.toUpperCase() : "ORBITX MEMBER"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </Marquee>
+            <div>
+              <p className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight">
+                4.9<span className="text-2xl font-normal text-neutral-400"> / 5.0</span>
+              </p>
+              <p className="text-xs sm:text-sm text-neutral-300 font-medium tracking-wide mt-2">
+                satisfaction rating
+              </p>
+            </div>
+          </div>
 
         </div>
       </section>
 
       {/* ========================================================================= */}
-      {/* 3D SCALE-UP SECTION 5: VIP NEWSLETTER SUBSCRIPTION */}
+      {/* SECTION 4: SPLIT CARD TESTIMONIAL (EXACT MATCHING USER REFERENCE DESIGN) */}
       {/* ========================================================================= */}
-      <section className="w-full mx-auto px-4 sm:px-8 lg:px-16 my-24">
-        <div className="bg-black text-white p-10 sm:p-16 rounded-3xl text-center space-y-6 shadow-2xl max-w-4xl mx-auto relative overflow-hidden hover:scale-[1.01] transition-transform duration-300">
+      <section className="w-full py-16 sm:py-24 text-black overflow-hidden">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 space-y-10">
           
-          <div className="space-y-3">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-neutral-400 block">
-              STAY IN THE LOOP
-            </span>
-            <h3 className="text-3xl sm:text-5xl font-extrabold tracking-tight uppercase">
-              NEVER MISS A TRAVEL DROP
-            </h3>
-            <p className="text-xs sm:text-sm text-neutral-300 max-w-lg mx-auto font-medium leading-relaxed">
-              Subscribe to get instant email alerts when new verified tour packages or hotel stay discounts drop on OrbitX Travel.
+          {/* Section Header with Title & Description */}
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <p className="font-serif italic text-2xl sm:text-3xl text-[#0061AA] font-medium tracking-wide flex items-center justify-center gap-2">
+              <span>Review &amp; Testimonials</span>
+            </p>
+            <h2 className="text-3xl sm:text-5xl font-normal text-black tracking-wide uppercase font-sans">
+              TOP REVIEWS FOR ORBITX
+            </h2>
+            <p className="text-xs sm:text-sm text-neutral-500 max-w-xl mx-auto leading-relaxed font-normal">
+              Authentic experiences and direct host feedback shared by verified travelers on OrbitX.
             </p>
           </div>
 
-          <form onSubmit={handleNewsletterSubmit} className="max-w-md mx-auto space-y-3">
-            <div className="bg-white p-2 rounded-full flex flex-col sm:flex-row items-center shadow-md">
-              <input
-                type="email"
-                value={newsletterEmail}
-                onChange={(e) => setNewsletterEmail(e.target.value)}
-                placeholder="Enter your email address..."
-                required
-                className="w-full text-black placeholder-neutral-400 bg-transparent text-xs px-4 py-3 outline-none font-semibold"
-              />
-              <button
-                type="submit"
-                className="w-full sm:w-auto bg-btn-primary text-btn-text-primary hover:bg-opacity-90 text-xs font-extrabold px-8 py-3.5 rounded-full transition shrink-0 cursor-pointer uppercase tracking-wider hover:scale-[1.02] active:scale-95 transition-transform shadow-md"
-              >
-                SUBSCRIBE
-              </button>
-            </div>
-            <p className="text-[10px] text-neutral-400 font-semibold">Zero Spam. Unsubscribe at any time.</p>
-          </form>
+          {reviewsToDisplay.length > 0 && (() => {
+            const activeReview = reviewsToDisplay[activeReviewIndex % reviewsToDisplay.length];
+            const currentIdx = activeReviewIndex % reviewsToDisplay.length;
+
+            return (
+              <div className="space-y-6">
+                {/* Fixed Height Split Card */}
+                <div className="bg-[#181620] rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row transition-all duration-500 md:h-[380px] lg:h-[400px]">
+                  
+                  {/* Left Side: Large Portrait Image (Grayscale B&W tone - Full Height) */}
+                  <div className="w-full md:w-5/12 relative h-[300px] md:h-full bg-neutral-900 overflow-hidden shrink-0">
+                    <img
+                      src={activeReview.avatar?.startsWith("http") ? activeReview.avatar : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80"}
+                      alt={activeReview.name}
+                      className="w-full h-full object-cover grayscale contrast-110 brightness-95 transition-all duration-700 ease-in-out"
+                    />
+                  </div>
+
+                  {/* Right Side: Dark Content Panel */}
+                  <div className="w-full md:w-7/12 p-8 sm:p-10 md:p-12 flex flex-col justify-between space-y-6 text-left bg-[#181620] h-full overflow-hidden">
+                    
+                    <div className="space-y-4">
+                      {/* Review Icon inside dark card */}
+                      <img 
+                        src="/review-icon.png" 
+                        alt="Review Icon" 
+                        className="w-8 h-8 sm:w-10 sm:h-10 object-contain brightness-0 invert opacity-90" 
+                      />
+
+                      {/* Testimonial Quote Comment Text with fixed line-clamp (....) */}
+                      <p className="text-slate-200 text-sm sm:text-base md:text-lg leading-relaxed font-normal tracking-wide line-clamp-4 sm:line-clamp-5">
+                        {activeReview.comment}
+                      </p>
+                    </div>
+
+                    {/* Author Name and Role / Location */}
+                    <div className="pt-2 border-t border-white/10">
+                      <p className="text-xs sm:text-sm text-neutral-300 font-medium tracking-wide">
+                        {activeReview.name}, <span className="text-neutral-500">{activeReview.hotel?.name || activeReview.hotel?.address || "Verified Explorer"}</span>
+                      </p>
+                    </div>
+
+                  </div>
+
+                </div>
+
+                {/* Carousel Indicator Dots Outside Below Card (Matching user reference SS) */}
+                <div className="flex items-center justify-center gap-2 pt-2">
+                  {reviewsToDisplay.map((_: any, idx: number) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setActiveReviewIndex(idx)}
+                      className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
+                        currentIdx === idx ? "w-8 bg-[#0061AA]" : "w-2.5 bg-neutral-300 hover:bg-neutral-400"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
         </div>
       </section>

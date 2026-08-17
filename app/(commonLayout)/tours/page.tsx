@@ -146,7 +146,7 @@ export default function FindToursPage() {
       {/* Main Listings view Grid */}
       <section className="w-full mx-auto px-8 lg:px-16 space-y-6">
         <div className="flex items-center justify-between border-b border-border-custom pb-4">
-          <h3 className="text-xl font-semibold text-text-primary tracking-wide">Active Tour Packages</h3>
+          <h3 className="text-2xl sm:text-3xl font-black text-text-primary uppercase tracking-wide">Active Tour Packages</h3>
           <div className="text-xs font-semibold text-text-secondary bg-bg-secondary border border-border-custom px-3 py-1.5 rounded-none">
             {packagesList.length} Packages Found
           </div>
@@ -205,7 +205,7 @@ export default function FindToursPage() {
                 <div className="absolute bottom-0 left-0 right-0 p-4 z-20 space-y-3">
                   {/* Location Icon + Title - Always visible initially */}
                   <h4 className="text-base font-semibold text-white leading-tight line-clamp-2 flex items-start gap-1">
-                    <MapPin className="h-4.5 w-4.5 text-theme-accent shrink-0 mt-0.5" />
+                    <MapPin className="h-4.5 w-4.5 text-white shrink-0 mt-0.5" />
                     <span>{pkg.title}</span>
                   </h4>
 

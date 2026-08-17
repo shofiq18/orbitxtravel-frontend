@@ -82,9 +82,10 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter), sans-serif;
+  --font-serif: var(--font-recoleta), serif;
   --font-title: var(--font-recoleta), serif;
   --font-mono: var(--font-geist-mono);
-  
+
   /* Bind custom color property variables */
   --color-bg-primary: var(--bg-primary);
   --color-bg-secondary: var(--bg-secondary);
@@ -153,15 +154,12 @@ body {
   font-family: var(--font-inter), sans-serif;
 }
 
-h1, .font-title {
+h1, .font-title, .font-serif {
   font-family: var(--font-recoleta), serif;
-  font-weight: 600;
-  letter-spacing: 0.02em;
 }
 
 h2, h3, h4, h5, h6 {
   font-family: var(--font-inter), sans-serif;
-  font-weight: 600;
 }
 
 /* Details page typography scale updates to enhance overall screen readability */
@@ -247,10 +245,13 @@ h2, h3, h4, h5, h6 {
   animation-play-state: paused !important;
 }
 
-/* Force native date input calendar picker indicator to render pure white */
+/* Force native date input calendar picker indicator to render pure solid black */
 input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1) brightness(100%);
+  filter: invert(0) brightness(0) !important;
+  opacity: 1 !important;
   cursor: pointer;
+  width: 18px;
+  height: 18px;
 }
 
 

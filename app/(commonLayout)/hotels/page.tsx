@@ -210,7 +210,7 @@ export default function FindHotelsPage() {
                     {hotel.name}
                   </h4>
                   <p className="text-[11px] text-gray-300 flex items-center space-x-1 font-semibold">
-                    <MapPin className="h-3.5 w-3.5 text-theme-accent shrink-0" />
+                    <MapPin className="h-3.5 w-3.5 text-white shrink-0" />
                     <span className="truncate">{hotel.address}</span>
                   </p>
                   <div className="max-h-0 opacity-0 overflow-hidden group-hover:max-h-20 group-hover:opacity-100 transition-all duration-300 ease-in-out border-t border-gray-700/80 pt-3 mt-1 flex items-center justify-between">
