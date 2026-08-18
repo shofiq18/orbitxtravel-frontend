@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useGetPackagesQuery } from "@/redux/api/tour/tourApi";
 import { useGetHotelsQuery } from "@/redux/api/hotel/hotelApi";
 import { useGetReviewsQuery } from "@/redux/api/review/reviewApi";
@@ -9,6 +9,7 @@ import {
   MapPin, 
   Calendar, 
   Search, 
+  X,
   ShieldCheck, 
   Bus, 
   Hotel, 
@@ -24,6 +25,8 @@ import {
   Ticket, 
   ChevronLeft, 
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Sparkles,
   Zap,
   FileText,
@@ -47,6 +50,80 @@ export default function Home() {
   const [endDate, setEndDate] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [hoveredAdvantageCard, setHoveredAdvantageCard] = useState<number | null>(null);
+
+  // Mobile search & date picker toggle states
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
+
+  // Fetch raw full database lists for dynamic location extraction
+  const { data: allPackagesResponse } = useGetPackagesQuery(undefined);
+  const { data: allHotelsResponse } = useGetHotelsQuery(undefined);
+
+  const rawPackages = allPackagesResponse?.data || [];
+  const rawHotels = allHotelsResponse?.data || [];
+
+  // Dynamically extract unique location names & counts from real DB records
+  const dynamicDestinations = useMemo(() => {
+    const map = new Map<string, { name: string; type: string; count: number }>();
+
+    rawPackages.forEach((pkg: any) => {
+      if (pkg.destination) {
+        const dest = pkg.destination.trim();
+        const existing = map.get(dest.toLowerCase());
+        if (existing) {
+          existing.count += 1;
+        } else {
+          map.set(dest.toLowerCase(), {
+            name: dest,
+            type: "Tour Package",
+            count: 1,
+          });
+        }
+      }
+    });
+
+    rawHotels.forEach((hotel: any) => {
+      const loc = hotel.address || hotel.city || hotel.name;
+      if (loc) {
+        // Extract main location name (e.g. "Cox's Bazar" from "Cox's Bazar, Bangladesh")
+        const mainLoc = loc.split(",")[0].trim();
+        const existing = map.get(mainLoc.toLowerCase());
+        if (existing) {
+          existing.count += 1;
+        } else {
+          map.set(mainLoc.toLowerCase(), {
+            name: mainLoc,
+            type: "Hotel & Stay",
+            count: 1,
+          });
+        }
+      }
+    });
+
+    // Default fallback popular destinations if DB is empty
+    if (map.size === 0) {
+      const fallbacks = [
+        { name: "Cox's Bazar", type: "Beach & Coast", count: 12 },
+        { name: "Sajek Valley", type: "Hill & Nature", count: 8 },
+        { name: "Sylhet", type: "Tea Gardens", count: 10 },
+        { name: "Saint Martin", type: "Coral Island", count: 6 },
+        { name: "Sreemangal", type: "Eco Resort", count: 7 },
+        { name: "Bandarban", type: "Mountains", count: 9 },
+        { name: "Dhaka", type: "City Stays", count: 15 },
+        { name: "Thailand", type: "International", count: 4 },
+      ];
+      fallbacks.forEach((f) => map.set(f.name.toLowerCase(), f));
+    }
+
+    return Array.from(map.values());
+  }, [rawPackages, rawHotels]);
+
+  // Filter dynamic suggestions in real-time as user types
+  const filteredSuggestions = dynamicDestinations.filter((item) =>
+    item.name.toLowerCase().includes(destination.toLowerCase()) ||
+    item.type.toLowerCase().includes(destination.toLowerCase())
+  );
 
   // Filters to send to API
   const [filters, setFilters] = useState<{
@@ -156,6 +233,8 @@ export default function Home() {
     if (destination) activeHotelFilters.address = destination;
     if (verifiedOnly) activeHotelFilters.verifiedOnly = "true";
     setHotelFilters(activeHotelFilters);
+
+    setIsMobileSearchOpen(false);
   };
 
   return (
@@ -164,27 +243,27 @@ export default function Home() {
       {/* ========================================================================= */}
       {/* HERO SECTION MATCHING REFERENCE DESIGN */}
       {/* ========================================================================= */}
-      <section className="relative w-full h-[720px] sm:h-[820px] bg-slate-950 flex items-center overflow-hidden">
+      <section className="relative w-full min-h-[720px] sm:min-h-[820px] bg-slate-950 flex items-center overflow-visible py-12 sm:py-16">
         {/* Full-bleed Landscape Background Image */}
         <img
           src="/hero-image.png"
           alt="OrbitX Travel Landscape"
-          className="absolute inset-0 w-full h-full z-0 opacity-95"
+          className="absolute inset-0 w-full h-full z-0 opacity-95 object-cover"
         />
         {/* Crisp Vignette Overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent z-0"></div>
 
         {/* Hero Content Container */}
-        <div className="relative z-10 w-full mx-auto px-8 lg:px-16 pt-16">
+        <div className="relative z-10 w-full mx-auto px-4 sm:px-8 lg:px-16 pt-16">
           <div className="max-w-3xl space-y-6">
             
             {/* Cursive Subtitle */}
-            <p className="font-serif italic text-2xl sm:text-4xl text-white/95 tracking-wide font-medium">
+            <p className="font-serif italic text-xl sm:text-4xl text-white/95 tracking-wide font-medium">
               Explorer and Travel
             </p>
 
             {/* Bold Main Headline */}
-            <h1 className="text-5xl sm:text-7xl font-extrabold text-white tracking-tight uppercase leading-none drop-shadow-md">
+            <h1 className="text-4xl sm:text-7xl font-extrabold text-white tracking-tight uppercase leading-[1.08] drop-shadow-md">
               Let&apos;s Go Now
             </h1>
 
@@ -193,63 +272,169 @@ export default function Home() {
               Book verified seat locks and luxury hotel stays curated by global tour organizers on OrbitX Travel.
             </p>
 
-            {/* Search Bar Container with Default Glass Effect */}
-            <div className="pt-2">
+            {/* Search Bar Container with Glass Effect */}
+            <div className="pt-1">
+              
+              {/* Ultra-Posh Mobile Glass Search Pill (Hidden when search form is open) */}
+              {!isMobileSearchOpen && (
+                <div className="sm:hidden">
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileSearchOpen(true)}
+                    className="w-full bg-white/15 backdrop-blur-2xl border border-white/25 p-2.5 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex items-center justify-between gap-3 cursor-pointer active:scale-98 transition-all"
+                  >
+                    <div className="text-left overflow-hidden pl-3">
+                      <span className="block text-xs font-bold text-white tracking-wide truncate">
+                        {destination ? destination : "Where to next?"}
+                      </span>
+                      <span className="block text-[11px] text-white/75 truncate">
+                        {startDate || endDate ? `${startDate || "Any"} - ${endDate || "Any"}` : "Anywhere · Any week · Search stays & tours"}
+                      </span>
+                    </div>
+
+                    {/* Search Icon on Right (No Chevron Arrow) */}
+                    <div className="w-10 h-10 rounded-full bg-[#0061AA] flex items-center justify-center text-white shadow-md shrink-0">
+                      <Search className="h-5 w-5" />
+                    </div>
+                  </button>
+                </div>
+              )}
+
+              {/* Main Expanded Search Form (Always visible on Desktop, Shown on Mobile when open) */}
               <form
                 onSubmit={handleSearch}
-                className="bg-black/10 backdrop-blur-3xl p-4 sm:p-5 rounded-2xl shadow-2xl space-y-4 max-w-3xl border-none relative"
+                className={`${isMobileSearchOpen ? "block" : "hidden sm:block"} bg-black/40 sm:bg-black/10 backdrop-blur-3xl p-4 sm:p-5 rounded-2xl sm:rounded-2xl shadow-2xl space-y-4 max-w-3xl border border-white/15 sm:border-none relative mt-0 animate-in fade-in duration-200 z-30 overflow-visible`}
               >
-                {/* Search Tabs */}
-                <div className="flex items-center space-x-2">
+                {/* Search Tabs & Mobile Close Button */}
+                <div className="flex items-center justify-between space-x-2">
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setSearchTab("tours")}
+                      className={`px-5 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+                        searchTab === "tours"
+                          ? "bg-btn-primary text-btn-text-primary shadow-lg"
+                          : "bg-white/10 backdrop-blur-md text-white hover:bg-white/20"
+                      }`}
+                    >
+                      Tour Packages
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSearchTab("hotels")}
+                      className={`px-5 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+                        searchTab === "hotels"
+                          ? "bg-btn-primary text-btn-text-primary shadow-lg"
+                          : "bg-white/10 backdrop-blur-md text-white hover:bg-white/20"
+                      }`}
+                    >
+                      Hotels & Stays
+                    </button>
+                  </div>
+
+                  {/* Mobile Close Button */}
                   <button
                     type="button"
-                    onClick={() => setSearchTab("tours")}
-                    className={`px-5 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
-                      searchTab === "tours"
-                        ? "bg-btn-primary text-btn-text-primary shadow-lg"
-                        : "bg-white/10 backdrop-blur-md text-white hover:bg-white/20"
-                    }`}
+                    onClick={() => setIsMobileSearchOpen(false)}
+                    className="sm:hidden p-2 rounded-full bg-white/10 text-white/80 hover:text-white cursor-pointer"
+                    aria-label="Close search"
                   >
-                    Tour Packages
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSearchTab("hotels")}
-                    className={`px-5 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
-                      searchTab === "hotels"
-                        ? "bg-btn-primary text-btn-text-primary shadow-lg"
-                        : "bg-white/10 backdrop-blur-md text-white hover:bg-white/20"
-                    }`}
-                  >
-                    Hotels & Stays
+                    <X className="h-4 w-4" />
                   </button>
                 </div>
 
                 {/* Capsule Fields Row */}
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4 overflow-visible">
                   
-                  {/* Location Field Card with Default Glass Effect */}
-                  <div className="flex items-center space-x-3.5 w-full md:w-auto flex-grow bg-white/10 backdrop-blur-md p-3.5 rounded-xl border-none transition-all">
-                    {searchTab === "tours" ? (
-                      <MapPin className="h-5 w-5 text-white shrink-0" />
-                    ) : (
-                      <Hotel className="h-5 w-5 text-white shrink-0" />
-                    )}
-                    <div className="text-left w-full">
-                      <span className="block text-[11px] font-extrabold text-white/90 uppercase tracking-wider">Location</span>
-                      <input
-                        type="text"
-                        placeholder={searchTab === "tours" ? "Thailand, Cox's Bazar..." : "Where are you staying?"}
-                        value={destination}
-                        onChange={(e) => setDestination(e.target.value)}
-                        className="w-full bg-transparent text-xs sm:text-sm text-white font-extrabold outline-none placeholder-white/70 mt-0.5"
-                      />
+                  {/* Location Field Card with Glass Effect & Suggestions Dropdown */}
+                  <div className="relative group flex-grow w-full md:w-auto z-40">
+                    <div 
+                      onClick={() => setIsLocationPickerOpen(true)}
+                      className="flex items-center space-x-3.5 bg-white/10 backdrop-blur-md p-3.5 rounded-xl border border-white/10 sm:border-none transition-all cursor-pointer"
+                    >
+                      {searchTab === "tours" ? (
+                        <MapPin className="h-5 w-5 text-white shrink-0" />
+                      ) : (
+                        <Hotel className="h-5 w-5 text-white shrink-0" />
+                      )}
+                      <div className="text-left w-full">
+                        <span className="block text-[11px] font-extrabold text-white/90 uppercase tracking-wider">Location</span>
+                        <input
+                          type="text"
+                          placeholder={searchTab === "tours" ? "Thailand, Cox's Bazar..." : "Where are you staying?"}
+                          value={destination}
+                          onChange={(e) => {
+                            setDestination(e.target.value);
+                            setIsLocationPickerOpen(true);
+                          }}
+                          onFocus={() => setIsLocationPickerOpen(true)}
+                          className="w-full bg-transparent text-xs sm:text-sm text-white font-extrabold outline-none placeholder-white/70 mt-0.5"
+                        />
+                      </div>
                     </div>
+
+                    {/* Location Suggestions Dropdown Modal */}
+                    {isLocationPickerOpen && (
+                      <div className="absolute left-0 right-0 top-full pt-1.5 z-50 min-w-[280px] sm:min-w-[320px]">
+                        <div className="bg-slate-900/98 backdrop-blur-2xl p-3 shadow-2xl rounded-2xl text-white border border-white/15 space-y-2 max-h-[220px] sm:max-h-[260px] overflow-y-auto">
+                          <div className="flex justify-between items-center px-2 pt-1 pb-2 border-b border-white/10">
+                            <span className="text-[10px] font-extrabold text-amber-400 uppercase tracking-wider">Available Destinations</span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setIsLocationPickerOpen(false);
+                              }}
+                              className="text-[10px] text-white/60 hover:text-white uppercase font-bold cursor-pointer"
+                            >
+                              Close
+                            </button>
+                          </div>
+
+                          {filteredSuggestions.length > 0 ? (
+                            <div className="space-y-1 pt-1">
+                              {filteredSuggestions.map((loc, idx) => (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDestination(loc.name);
+                                    setIsLocationPickerOpen(false);
+                                  }}
+                                  className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-white/10 transition-colors text-left group cursor-pointer"
+                                >
+                                  <div className="flex items-center space-x-2.5">
+                                    <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-amber-400 group-hover:bg-[#0061AA] group-hover:text-white transition-colors shrink-0">
+                                      <MapPin className="h-4 w-4" />
+                                    </div>
+                                    <div>
+                                      <span className="block text-xs font-bold text-white group-hover:text-amber-300 transition-colors">{loc.name}</span>
+                                      <span className="block text-[10px] text-slate-400">{loc.type}</span>
+                                    </div>
+                                  </div>
+                                  <span className="text-[10px] text-slate-300 font-semibold bg-white/5 px-2 py-0.5 rounded-md border border-white/10">
+                                    {typeof loc.count === "number" ? `${loc.count} Listing(s)` : loc.count}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="p-4 text-center text-xs text-slate-400 font-semibold">
+                              No destinations matching &quot;{destination}&quot;
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Travel & Stay Dates Field Card with Default Glass Effect */}
+                  {/* Travel & Stay Dates Field Card with Glass Effect */}
                   <div className="relative group flex-grow w-full md:w-auto">
-                    <div className="flex items-center space-x-3.5 bg-white/10 backdrop-blur-md p-3.5 rounded-xl cursor-pointer transition-all text-left h-full border-none">
+                    <div 
+                      onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
+                      className="flex items-center space-x-3.5 bg-white/10 backdrop-blur-md p-3.5 rounded-xl cursor-pointer transition-all text-left h-full border border-white/10 sm:border-none"
+                    >
                       {searchTab === "tours" ? (
                         <Clock className="h-5 w-5 text-white shrink-0" />
                       ) : (
@@ -259,7 +444,7 @@ export default function Home() {
                         <span className="block text-[11px] font-extrabold text-white/90 uppercase tracking-wider">
                           {searchTab === "hotels" ? "Stay Dates" : "Travel Dates"}
                         </span>
-                        <span className="block text-xs sm:text-sm text-white font-extrabold mt-0.5">
+                        <span className="block text-xs sm:text-sm text-white font-extrabold mt-0.5 truncate">
                           {startDate && endDate 
                             ? `${startDate} to ${endDate}`
                             : startDate 
@@ -271,12 +456,24 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* Continuous Hover Bridge Container (Zero Gap so Modal Never Hides on Cursor Move) */}
-                    <div className="absolute left-0 right-0 top-full pt-1.5 z-50 hidden group-hover:block hover:block min-w-[320px]">
+                    {/* Date Picker Dropdown Modal */}
+                    <div className={`absolute left-0 right-0 top-full pt-1.5 z-50 ${isDatePickerOpen ? "block" : "hidden group-hover:block hover:block"} min-w-[300px] sm:min-w-[320px]`}>
                       <div className="bg-slate-900/98 backdrop-blur-2xl p-4 shadow-2xl rounded-2xl text-white border border-white/10">
-                        <p className="text-[11px] font-extrabold text-white/90 uppercase tracking-wider mb-3">
-                          {searchTab === "hotels" ? "Select Stay Duration (Check-In - Check-Out)" : "Select Travel Duration (From - To)"}
-                        </p>
+                        <div className="flex justify-between items-center mb-3">
+                          <p className="text-[11px] font-extrabold text-white/90 uppercase tracking-wider">
+                            {searchTab === "hotels" ? "Select Stay Duration" : "Select Travel Duration"}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsDatePickerOpen(false);
+                            }}
+                            className="text-[10px] font-bold text-amber-400 hover:underline uppercase"
+                          >
+                            Done
+                          </button>
+                        </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div className="bg-white/10 p-3 rounded-xl border-none">
                             <span className="block text-[10px] font-extrabold text-white/90 uppercase tracking-wider mb-1">
@@ -312,11 +509,11 @@ export default function Home() {
                   {/* Platform Primary Search Button */}
                   <button
                     type="submit"
-                    className="w-full md:w-auto bg-btn-primary text-btn-text-primary hover:bg-opacity-90 font-black text-xs py-4 px-4 rounded-xl flex items-center justify-center cursor-pointer shadow-xl transition-all shrink-0 uppercase tracking-wider h-full border-none"
+                    className="w-full md:w-auto bg-btn-primary text-btn-text-primary hover:bg-opacity-90 font-black text-xs py-3.5 px-6 rounded-xl flex items-center justify-center cursor-pointer shadow-xl transition-all shrink-0 uppercase tracking-wider h-full border-none"
                     title="Search"
                   >
-                    <Search className="h-8 w-8 text-btn-text-primary" />
-                 
+                    <Search className="h-6 w-6 text-btn-text-primary mr-2 md:mr-0" />
+                    <span className="md:hidden text-xs font-black">SEARCH ORBITX</span>
                   </button>
 
                 </div>
@@ -328,8 +525,8 @@ export default function Home() {
       </section>
 
       {/* Main Listings Grid */}
-      <section className="w-full mx-auto px-8 lg:px-16">
-        <div className="space-y-1.5 mb-8 border-b border-neutral-200 pb-4">
+      <section className="w-full mx-auto px-0 sm:px-8 lg:px-16">
+        <div className="space-y-1.5 mb-8 border-b border-neutral-200 pb-4 px-4 sm:px-0">
           <h3 className="text-3xl sm:text-5xl font-serif font-medium text-black tracking-normal leading-tight">
             Tour Packages
           </h3>
@@ -387,7 +584,7 @@ export default function Home() {
                     <span>{pkg.title}</span>
                   </h4>
 
-                  <div className="max-h-0 opacity-0 overflow-hidden group-hover:max-h-[220px] group-hover:opacity-100 transition-all duration-500 ease-in-out space-y-3">
+                  <div className="max-h-[220px] opacity-100 sm:max-h-0 sm:opacity-0 overflow-hidden sm:group-hover:max-h-[220px] sm:group-hover:opacity-100 transition-all duration-500 ease-in-out space-y-3">
                     <div className="flex items-center justify-between text-[11px] text-gray-300 font-semibold">
                       <span>Departs: {new Date(pkg.startDate).toLocaleDateString()}</span>
                       <span className="text-white font-extrabold">{pkg.availableSeats} Seats Left</span>
@@ -429,8 +626,8 @@ export default function Home() {
       </section>
 
       {/* Featured Hotels Section */}
-      <section className="w-full mx-auto px-8 lg:px-16 mt-16">
-        <div className="space-y-1.5 mb-8 border-b border-neutral-200 pb-4">
+      <section className="w-full mx-auto px-0 sm:px-8 lg:px-16 mt-16">
+        <div className="space-y-1.5 mb-8 border-b border-neutral-200 pb-4 px-4 sm:px-0">
           <div className="flex items-center justify-between">
             <h3 className="text-3xl sm:text-5xl font-serif font-medium text-black tracking-normal leading-tight">
               Featured Hotels
@@ -505,7 +702,7 @@ export default function Home() {
                       </p>
                     </div>
 
-                    <div className="max-w-0 group-hover:max-w-[160px] opacity-0 group-hover:opacity-100 overflow-hidden transition-all duration-300 ease-in-out text-right shrink-0">
+                    <div className="max-w-[180px] opacity-100 sm:max-w-0 sm:opacity-0 overflow-hidden sm:group-hover:max-w-[180px] sm:group-hover:opacity-100 transition-all duration-300 ease-in-out text-right shrink-0">
                       <p className="text-[10px] text-gray-300 font-medium uppercase tracking-wider whitespace-nowrap">Standard Rate</p>
                       <p className="text-sm sm:text-base font-extrabold text-white mt-0.5 whitespace-nowrap">
                         {startingPrice ? `BDT ${startingPrice} / Night` : "Contact for rates"}
@@ -675,45 +872,45 @@ export default function Home() {
       {/* ========================================================================= */}
       {/* SECTION 3: TRUST & IMPACT STATS (EXACT FULL-BLEED DESIGN MATCHING REFERENCE) */}
       {/* ========================================================================= */}
-      <section className="w-full bg-[#051C2C] py-20 sm:py-28 px-6 sm:px-12 lg:px-20 my-16 text-white overflow-hidden">
+      <section className="w-full bg-[#051C2C] py-20 sm:py-28 px-4 sm:px-12 lg:px-20 my-16 text-white overflow-hidden">
         <div className="max-w-7xl mx-auto space-y-16">
           
           {/* Top Row: Headline & Trust Badges */}
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight leading-[1.15] max-w-xl">
-              Trusted by thousands to keep their journey moving
+          <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6">
+            <h2 className="text-3xl sm:text-5xl font-serif font-medium text-white tracking-tight leading-[1.15] max-w-xl">
+              Trusted by thousands to keep their <span className="font-serif italic font-normal text-[#38bdf8]">journey moving</span>
             </h2>
 
-            {/* Badges Row */}
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-              <div className="bg-white/10 backdrop-blur-md border border-white/15 px-3.5 py-2.5 rounded-xl flex items-center space-x-2.5 shadow-lg">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                <div className="text-left">
-                  <p className="text-[10px] uppercase font-bold tracking-wider text-emerald-400 leading-none">VERIFIED</p>
+            {/* Badges Row - Single Inline Row */}
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 shrink-0">
+              <div className="bg-white/10 backdrop-blur-md border border-white/15 px-3 py-2 rounded-xl flex items-center space-x-2 shadow-lg shrink-0">
+                <ShieldCheck className="w-4.5 h-4.5 text-emerald-400 shrink-0" />
+                <div className="text-left whitespace-nowrap">
+                  <p className="text-[9px] uppercase font-bold tracking-wider text-emerald-400 leading-none">VERIFIED</p>
                   <p className="text-xs font-semibold text-white leading-tight">Escrow Stays</p>
                 </div>
               </div>
 
-              <div className="bg-white/10 backdrop-blur-md border border-white/15 px-3.5 py-2.5 rounded-xl flex items-center space-x-2.5 shadow-lg">
-                <Award className="w-5 h-5 text-amber-400" />
-                <div className="text-left">
-                  <p className="text-[10px] uppercase font-bold tracking-wider text-amber-400 leading-none">RATED #1</p>
+              <div className="bg-white/10 backdrop-blur-md border border-white/15 px-3 py-2 rounded-xl flex items-center space-x-2 shadow-lg shrink-0">
+                <Award className="w-4.5 h-4.5 text-amber-400 shrink-0" />
+                <div className="text-left whitespace-nowrap">
+                  <p className="text-[9px] uppercase font-bold tracking-wider text-amber-400 leading-none">RATED #1</p>
                   <p className="text-xs font-semibold text-white leading-tight">Tour Portal</p>
                 </div>
               </div>
 
-              <div className="bg-white/10 backdrop-blur-md border border-white/15 px-3.5 py-2.5 rounded-xl flex items-center space-x-2.5 shadow-lg">
-                <Star className="w-5 h-5 text-sky-400 fill-sky-400" />
-                <div className="text-left">
-                  <p className="text-[10px] uppercase font-bold tracking-wider text-sky-400 leading-none">CUSTOMER CHOICE</p>
+              <div className="bg-white/10 backdrop-blur-md border border-white/15 px-3 py-2 rounded-xl flex items-center space-x-2 shadow-lg shrink-0">
+                <Star className="w-4.5 h-4.5 text-sky-400 fill-sky-400 shrink-0" />
+                <div className="text-left whitespace-nowrap">
+                  <p className="text-[9px] uppercase font-bold tracking-wider text-sky-400 leading-none">CUSTOMER CHOICE</p>
                   <p className="text-xs font-semibold text-white leading-tight">4.9 / 5.0 Rating</p>
                 </div>
               </div>
 
-              <div className="bg-white/10 backdrop-blur-md border border-white/15 px-3.5 py-2.5 rounded-xl flex items-center space-x-2.5 shadow-lg">
-                <CheckCircle2 className="w-5 h-5 text-blue-400" />
-                <div className="text-left">
-                  <p className="text-[10px] uppercase font-bold tracking-wider text-blue-400 leading-none">GUARANTEE</p>
+              <div className="bg-white/10 backdrop-blur-md border border-white/15 px-3 py-2 rounded-xl flex items-center space-x-2 shadow-lg shrink-0">
+                <CheckCircle2 className="w-4.5 h-4.5 text-blue-400 shrink-0" />
+                <div className="text-left whitespace-nowrap">
+                  <p className="text-[9px] uppercase font-bold tracking-wider text-blue-400 leading-none">GUARANTEE</p>
                   <p className="text-xs font-semibold text-white leading-tight">Instant PDF</p>
                 </div>
               </div>
@@ -765,11 +962,11 @@ export default function Home() {
       {/* ========================================================================= */}
       {/* SECTION 4: SPLIT CARD TESTIMONIAL (EXACT MATCHING USER REFERENCE DESIGN) */}
       {/* ========================================================================= */}
-      <section className="w-full py-16 sm:py-24 text-black overflow-hidden">
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 space-y-10">
+      <section className="w-full py-16 sm:py-24 text-black overflow-hidden px-0 sm:px-8">
+        <div className="max-w-6xl mx-auto px-0 sm:px-8 space-y-10">
           
           {/* Section Header with Title & Description */}
-          <div className="text-center space-y-3 max-w-2xl mx-auto">
+          <div className="text-center space-y-3 max-w-2xl mx-auto px-4 sm:px-0">
             <p className="font-serif italic text-2xl sm:text-3xl text-[#0061AA] font-medium tracking-wide flex items-center justify-center gap-2">
               <span>Review &amp; Testimonials</span>
             </p>
@@ -786,12 +983,12 @@ export default function Home() {
             const currentIdx = activeReviewIndex % reviewsToDisplay.length;
 
             return (
-              <div className="space-y-6">
+              <div className="space-y-6 w-full px-0">
                 {/* Fixed Height Split Card */}
-                <div className="bg-[#181620] rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row transition-all duration-500 md:h-[380px] lg:h-[400px]">
+                <div className="bg-[#181620] rounded-none sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row transition-all duration-500 md:h-[380px] lg:h-[400px] w-full">
                   
                   {/* Left Side: Large Portrait Image (Grayscale B&W tone - Full Height) */}
-                  <div className="w-full md:w-5/12 relative h-[300px] md:h-full bg-neutral-900 overflow-hidden shrink-0">
+                  <div className="w-full md:w-5/12 relative h-[260px] sm:h-[300px] md:h-full bg-neutral-900 overflow-hidden shrink-0">
                     <img
                       src={activeReview.avatar?.startsWith("http") ? activeReview.avatar : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80"}
                       alt={activeReview.name}
@@ -800,7 +997,7 @@ export default function Home() {
                   </div>
 
                   {/* Right Side: Dark Content Panel */}
-                  <div className="w-full md:w-7/12 p-8 sm:p-10 md:p-12 flex flex-col justify-between space-y-6 text-left bg-[#181620] h-full overflow-hidden">
+                  <div className="w-full md:w-7/12 p-6 sm:p-10 md:p-12 flex flex-col justify-between space-y-6 text-left bg-[#181620] h-full overflow-hidden">
                     
                     <div className="space-y-4">
                       {/* Review Icon inside dark card */}

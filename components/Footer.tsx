@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { toast } from "react-hot-toast";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { 
   Globe, 
@@ -17,15 +19,18 @@ import {
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const [email, setEmail] = useState("");
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
-    // Newsletter subscription mock
+    if (!email) return;
+    toast.success("Thank you for subscribing to OrbitX Travel updates!");
+    setEmail("");
   };
 
   return (
     <footer className="w-full bg-[#0B0F19] text-gray-100 border-t border-gray-800/50 pt-16 pb-8 transition-colors duration-300">
-      <div className="w-full mx-auto px-8 lg:px-16">
+      <div className="w-full mx-auto px-4 sm:px-8 lg:px-16">
         
         {/* Grid Column Layout */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 border-b border-gray-800/80 pb-12">
@@ -143,6 +148,8 @@ export default function Footer() {
               <div className="bg-white p-1.5 rounded-full flex items-center shadow-xl border border-white/20">
                 <input
                   type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email address..."
                   required
                   className="w-full bg-transparent text-black placeholder-neutral-400 text-xs sm:text-sm px-4 py-2 outline-none font-medium"

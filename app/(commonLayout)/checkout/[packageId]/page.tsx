@@ -194,8 +194,8 @@ export default function CheckoutPage() {
       {/* 3/2 Grid Split Ratio: Left md:col-span-3, Right md:col-span-2 */}
       <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-5 gap-8 print:block print:max-w-xl print-receipt-container">
         
-        {/* Left Side (3/5 Ratio): Authentic bKash Payment Card */}
-        <div className="md:col-span-3 space-y-6 print:w-full">
+        {/* Left Side on Desktop (3/5 Ratio), Order 2 on Mobile: Authentic bKash Payment Card */}
+        <div className="md:col-span-3 space-y-6 print:w-full order-2 md:order-1">
           
           {checkoutStep === "form" && (
             <div className="space-y-4">
@@ -445,8 +445,8 @@ export default function CheckoutPage() {
 
         </div>
 
-        {/* Right Side (2/5 Ratio): Order Summary Layout */}
-        <div className="md:col-span-2 space-y-6">
+        {/* Right Side on Desktop (2/5 Ratio), Order 1 on Mobile: Order Summary Layout */}
+        <div className="md:col-span-2 space-y-6 order-1 md:order-2">
           <div className="border border-gray-200 bg-bg-primary p-6 space-y-6 rounded-2xl shadow-xs">
             <h3 className="text-base font-semibold text-text-primary tracking-wide border-b border-gray-200 pb-2">
               Order Summary

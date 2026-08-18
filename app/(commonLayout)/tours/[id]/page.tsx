@@ -105,7 +105,7 @@ export default function TourDetailsPage() {
   const allPhotos = defaultImages.filter(Boolean);
 
   return (
-    <div className="w-full mx-auto px-8 lg:px-16 py-10 space-y-8 details-page-wrapper">
+    <div className="w-full mx-auto px-4 sm:px-8 lg:px-16 py-10 space-y-8 details-page-wrapper">
       
       {/* Top Title & Actions Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border-custom pb-4 mb-2 mt-0">

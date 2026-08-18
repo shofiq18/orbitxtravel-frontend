@@ -123,7 +123,7 @@ export default function BecomeHostPage() {
   };
 
   return (
-    <div className="w-full mx-auto px-8 lg:px-16 py-12 min-h-[80vh]">
+    <div className="w-full mx-auto px-4 sm:px-8 lg:px-16 py-12 min-h-[80vh]">
       
       {/* Page Title Header */}
       <div className="mb-10 text-center max-w-2xl mx-auto">
