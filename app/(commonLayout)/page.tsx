@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useGetPackagesQuery } from "@/redux/api/tour/tourApi";
 import { useGetHotelsQuery } from "@/redux/api/hotel/hotelApi";
 import { useGetReviewsQuery } from "@/redux/api/review/reviewApi";
@@ -36,7 +36,11 @@ import {
   Building2,
   ArrowRight,
   ArrowUpRight,
-  Quote
+  Quote,
+  User,
+  Bed,
+  Minus,
+  Plus
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
@@ -51,6 +55,42 @@ export default function Home() {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [hoveredAdvantageCard, setHoveredAdvantageCard] = useState<number | null>(null);
 
+  // Guest counter state variables
+  const [adults, setAdults] = useState(0);
+  const [childrenCount, setChildrenCount] = useState(0);
+  const [infants, setInfants] = useState(0);
+  const [pets, setPets] = useState(0);
+  const [isGuestPickerOpen, setIsGuestPickerOpen] = useState(false);
+
+  // Click outside refs for dropdown modals
+  const guestPickerRef = useRef<HTMLDivElement>(null);
+  const locationPickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (guestPickerRef.current && !guestPickerRef.current.contains(event.target as Node)) {
+        setIsGuestPickerOpen(false);
+      }
+      if (locationPickerRef.current && !locationPickerRef.current.contains(event.target as Node)) {
+        setIsLocationPickerOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const getGuestSummary = () => {
+    const parts: string[] = [];
+    if (adults > 0) parts.push(`${adults} ${adults === 1 ? "Adult" : "Adults"}`);
+    if (childrenCount > 0) parts.push(`${childrenCount} ${childrenCount === 1 ? "Child" : "Children"}`);
+    if (infants > 0) parts.push(`${infants} ${infants === 1 ? "Infant" : "Infants"}`);
+    if (pets > 0) parts.push(`${pets} ${pets === 1 ? "Pet" : "Pets"}`);
+    return parts.length > 0 ? parts.join(", ") : "Add guests";
+  };
+
   // Mobile search & date picker toggle states
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -63,77 +103,41 @@ export default function Home() {
   const rawPackages = allPackagesResponse?.data || [];
   const rawHotels = allHotelsResponse?.data || [];
 
-  // Dynamically extract unique location names & counts from real DB records
-  const dynamicDestinations = useMemo(() => {
-    const map = new Map<string, { name: string; type: string; count: number }>();
+  // Full clean list of 64 districts of Bangladesh
+  const BD_DISTRICTS = useMemo(() => [
+    "Bagerhat", "Bandarban", "Barguna", "Barishal", "Bhola", "Bogra", "Brahmanbaria", "Chandpur",
+    "Chapainawabganj", "Chattogram", "Chuadanga", "Cumilla", "Cox's Bazar", "Dhaka", "Dinajpur",
+    "Faridpur", "Feni", "Gaibandha", "Gazipur", "Gopalganj", "Habiganj", "Jamalpur", "Jashore",
+    "Jhalokathi", "Jhenaidah", "Joypurhat", "Khagrachhari", "Khulna", "Kishoreganj", "Kurigram",
+    "Kushtia", "Lakshmipur", "Lalmonirhat", "Madaripur", "Magura", "Manikganj", "Meherpur",
+    "Moulvibazar", "Munshiganj", "Mymensingh", "Naogaon", "Narail", "Narayanganj", "Narsingdi",
+    "Natore", "Netrokona", "Nilphamari", "Noakhali", "Pabna", "Panchagarh", "Patuakhali",
+    "Pirojpur", "Rajbari", "Rajshahi", "Rangamati", "Rangpur", "Satkhira", "Shariatpur",
+    "Sherpur", "Sirajganj", "Sunamganj", "Sylhet", "Tangail", "Thakurgaon"
+  ], []);
 
-    rawPackages.forEach((pkg: any) => {
-      if (pkg.destination) {
-        const dest = pkg.destination.trim();
-        const existing = map.get(dest.toLowerCase());
-        if (existing) {
-          existing.count += 1;
-        } else {
-          map.set(dest.toLowerCase(), {
-            name: dest,
-            type: "Tour Package",
-            count: 1,
-          });
-        }
-      }
-    });
-
-    rawHotels.forEach((hotel: any) => {
-      const loc = hotel.address || hotel.city || hotel.name;
-      if (loc) {
-        // Extract main location name (e.g. "Cox's Bazar" from "Cox's Bazar, Bangladesh")
-        const mainLoc = loc.split(",")[0].trim();
-        const existing = map.get(mainLoc.toLowerCase());
-        if (existing) {
-          existing.count += 1;
-        } else {
-          map.set(mainLoc.toLowerCase(), {
-            name: mainLoc,
-            type: "Hotel & Stay",
-            count: 1,
-          });
-        }
-      }
-    });
-
-    // Default fallback popular destinations if DB is empty
-    if (map.size === 0) {
-      const fallbacks = [
-        { name: "Cox's Bazar", type: "Beach & Coast", count: 12 },
-        { name: "Sajek Valley", type: "Hill & Nature", count: 8 },
-        { name: "Sylhet", type: "Tea Gardens", count: 10 },
-        { name: "Saint Martin", type: "Coral Island", count: 6 },
-        { name: "Sreemangal", type: "Eco Resort", count: 7 },
-        { name: "Bandarban", type: "Mountains", count: 9 },
-        { name: "Dhaka", type: "City Stays", count: 15 },
-        { name: "Thailand", type: "International", count: 4 },
-      ];
-      fallbacks.forEach((f) => map.set(f.name.toLowerCase(), f));
-    }
-
-    return Array.from(map.values());
-  }, [rawPackages, rawHotels]);
-
-  // Filter dynamic suggestions in real-time as user types
-  const filteredSuggestions = dynamicDestinations.filter((item) =>
-    item.name.toLowerCase().includes(destination.toLowerCase()) ||
-    item.type.toLowerCase().includes(destination.toLowerCase())
-  );
+  // Filter 64 district suggestions in real-time as user types
+  const filteredSuggestions = useMemo(() => {
+    if (!destination) return BD_DISTRICTS;
+    return BD_DISTRICTS.filter((dist) =>
+      dist.toLowerCase().includes(destination.toLowerCase())
+    );
+  }, [destination, BD_DISTRICTS]);
 
   // Filters to send to API
   const [filters, setFilters] = useState<{
     destination?: string;
     startDate?: string;
+    endDate?: string;
+    guests?: number;
     verifiedOnly?: boolean;
   }>({});
 
   const [hotelFilters, setHotelFilters] = useState<{
     address?: string;
+    startDate?: string;
+    endDate?: string;
+    guests?: number;
     verifiedOnly?: string;
   }>({});
 
@@ -220,21 +224,49 @@ export default function Home() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    const totalGuests = adults + childrenCount + infants + pets;
     
-    // Set filters for Tour Packages
-    const activePkgFilters: typeof filters = {};
-    if (destination) activePkgFilters.destination = destination;
-    if (startDate) activePkgFilters.startDate = startDate;
-    if (verifiedOnly) activePkgFilters.verifiedOnly = true;
-    setFilters(activePkgFilters);
+    if (searchTab === "tours") {
+      // Set filters ONLY for Tour Packages
+      const activePkgFilters: typeof filters = {};
+      if (destination) activePkgFilters.destination = destination;
+      if (startDate) activePkgFilters.startDate = startDate;
+      if (endDate) activePkgFilters.endDate = endDate;
+      if (totalGuests > 0) activePkgFilters.guests = totalGuests;
+      if (verifiedOnly) activePkgFilters.verifiedOnly = true;
+      setFilters(activePkgFilters);
+      setHotelFilters({}); // Reset hotel filters
 
-    // Set filters for Stays/Hotels
-    const activeHotelFilters: typeof hotelFilters = {};
-    if (destination) activeHotelFilters.address = destination;
-    if (verifiedOnly) activeHotelFilters.verifiedOnly = "true";
-    setHotelFilters(activeHotelFilters);
+      setIsMobileSearchOpen(false);
 
-    setIsMobileSearchOpen(false);
+      // Scroll to tour packages section
+      setTimeout(() => {
+        const el = document.getElementById("tour-packages-section");
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    } else {
+      // Set filters ONLY for Stays/Hotels
+      const activeHotelFilters: typeof hotelFilters = {};
+      if (destination) activeHotelFilters.address = destination;
+      if (startDate) activeHotelFilters.startDate = startDate;
+      if (endDate) activeHotelFilters.endDate = endDate;
+      if (totalGuests > 0) activeHotelFilters.guests = totalGuests;
+      if (verifiedOnly) activeHotelFilters.verifiedOnly = "true";
+      setHotelFilters(activeHotelFilters);
+      setFilters({}); // Reset tour package filters
+
+      setIsMobileSearchOpen(false);
+
+      // Scroll to featured hotels section
+      setTimeout(() => {
+        const el = document.getElementById("featured-hotels-section");
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    }
   };
 
   return (
@@ -243,289 +275,372 @@ export default function Home() {
       {/* ========================================================================= */}
       {/* HERO SECTION MATCHING REFERENCE DESIGN */}
       {/* ========================================================================= */}
-      <section className="relative w-full min-h-[720px] sm:min-h-[820px] bg-slate-950 flex items-center overflow-visible py-12 sm:py-16">
+      <section className="relative w-full min-h-[640px] sm:min-h-[720px] lg:min-h-[780px] bg-slate-950 flex items-center justify-center overflow-visible py-16 sm:py-24">
         {/* Full-bleed Landscape Background Image */}
         <img
           src="/hero-image.png"
           alt="OrbitX Travel Landscape"
-          className="absolute inset-0 w-full h-full z-0 opacity-95 object-cover"
+          className="absolute inset-0 w-full h-full z-0 opacity-90 object-cover"
         />
-        {/* Crisp Vignette Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent z-0"></div>
+        {/* Crisp Dark Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/35 to-black/60 z-0"></div>
 
         {/* Hero Content Container */}
-        <div className="relative z-10 w-full mx-auto px-4 sm:px-8 lg:px-16 pt-16">
-          <div className="max-w-3xl space-y-6">
+        <div className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-8 pt-8 flex flex-col items-center justify-center text-center">
+          
+          {/* Centered Main Headline */}
+          <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-wide uppercase leading-tight max-w-4xl drop-shadow-lg">
+            WE OFFER AWARD WINNING TRAVELING SERVICES WITH REASONABLE PRICES
+          </h1>
+
+          {/* Subtitle Paragraph */}
+          <p className="text-xs sm:text-sm md:text-base text-gray-200 max-w-2xl mx-auto font-normal mt-4 leading-relaxed drop-shadow-md">
+            Book verified seat locks and luxury hotel stays curated by global tour organizers on OrbitX Travel.
+          </p>
+
+          {/* Search Card Container with Overlapping Tabs */}
+          <div className="w-full max-w-5xl mx-auto relative z-40 mt-12 sm:mt-16 text-left">
             
-            {/* Cursive Subtitle */}
-            <p className="font-serif italic text-xl sm:text-4xl text-white/95 tracking-wide font-medium">
-              Explorer and Travel
-            </p>
-
-            {/* Bold Main Headline */}
-            <h1 className="text-4xl sm:text-7xl font-extrabold text-white tracking-tight uppercase leading-[1.08] drop-shadow-md">
-              Let&apos;s Go Now
-            </h1>
-
-            {/* Sub-paragraph */}
-            <p className="text-xs sm:text-sm text-slate-100 max-w-xl leading-relaxed font-semibold drop-shadow-sm">
-              Book verified seat locks and luxury hotel stays curated by global tour organizers on OrbitX Travel.
-            </p>
-
-            {/* Search Bar Container with Glass Effect */}
-            <div className="pt-1">
-              
-              {/* Ultra-Posh Mobile Glass Search Pill (Hidden when search form is open) */}
-              {!isMobileSearchOpen && (
-                <div className="sm:hidden">
-                  <button
-                    type="button"
-                    onClick={() => setIsMobileSearchOpen(true)}
-                    className="w-full bg-white/15 backdrop-blur-2xl border border-white/25 p-2.5 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.4)] flex items-center justify-between gap-3 cursor-pointer active:scale-98 transition-all"
-                  >
-                    <div className="text-left overflow-hidden pl-3">
-                      <span className="block text-xs font-bold text-white tracking-wide truncate">
-                        {destination ? destination : "Where to next?"}
-                      </span>
-                      <span className="block text-[11px] text-white/75 truncate">
-                        {startDate || endDate ? `${startDate || "Any"} - ${endDate || "Any"}` : "Anywhere · Any week · Search stays & tours"}
-                      </span>
-                    </div>
-
-                    {/* Search Icon on Right (No Chevron Arrow) */}
-                    <div className="w-10 h-10 rounded-full bg-[#0061AA] flex items-center justify-center text-white shadow-md shrink-0">
-                      <Search className="h-5 w-5" />
-                    </div>
-                  </button>
-                </div>
-              )}
-
-              {/* Main Expanded Search Form (Always visible on Desktop, Shown on Mobile when open) */}
-              <form
-                onSubmit={handleSearch}
-                className={`${isMobileSearchOpen ? "block" : "hidden sm:block"} bg-black/40 sm:bg-black/10 backdrop-blur-3xl p-4 sm:p-5 rounded-2xl sm:rounded-2xl shadow-2xl space-y-4 max-w-3xl border border-white/15 sm:border-none relative mt-0 animate-in fade-in duration-200 z-30 overflow-visible`}
+            {/* Search Tabs sticking up on the top left */}
+            <div className="flex items-center space-x-1 pl-0 relative z-10 -mb-px">
+              <button
+                type="button"
+                onClick={() => setSearchTab("tours")}
+                className={`px-6 sm:px-8 py-3.5 text-xs sm:text-sm font-bold rounded-t-xl transition-all cursor-pointer flex items-center space-x-2 border-t border-x ${
+                  searchTab === "tours"
+                    ? "bg-[#DCDCDC] text-gray-900 border-[#C8C8C8] border-b-[#DCDCDC] font-extrabold relative z-10"
+                    : "bg-[#1A1A1A] text-white/80 border-transparent hover:bg-black/80 hover:text-white"
+                }`}
               >
-                {/* Search Tabs & Mobile Close Button */}
-                <div className="flex items-center justify-between space-x-2">
-                  <div className="flex items-center space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => setSearchTab("tours")}
-                      className={`px-5 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
-                        searchTab === "tours"
-                          ? "bg-btn-primary text-btn-text-primary shadow-lg"
-                          : "bg-white/10 backdrop-blur-md text-white hover:bg-white/20"
-                      }`}
-                    >
-                      Tour Packages
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSearchTab("hotels")}
-                      className={`px-5 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
-                        searchTab === "hotels"
-                          ? "bg-btn-primary text-btn-text-primary shadow-lg"
-                          : "bg-white/10 backdrop-blur-md text-white hover:bg-white/20"
-                      }`}
-                    >
-                      Hotels & Stays
-                    </button>
-                  </div>
+                <User className="h-4 w-4" />
+                <span>Tour</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSearchTab("hotels")}
+                className={`px-6 sm:px-8 py-3.5 text-xs sm:text-sm font-bold rounded-t-xl transition-all cursor-pointer flex items-center space-x-2 border-t border-x ${
+                  searchTab === "hotels"
+                    ? "bg-[#DCDCDC] text-gray-900 border-[#C8C8C8] border-b-[#DCDCDC] font-extrabold relative z-10"
+                    : "bg-[#1A1A1A] text-white/80 border-transparent hover:bg-black/80 hover:text-white"
+                }`}
+              >
+                <Bed className="h-4 w-4" />
+                <span>Hotel</span>
+              </button>
+            </div>
 
-                  {/* Mobile Close Button */}
-                  <button
-                    type="button"
-                    onClick={() => setIsMobileSearchOpen(false)}
-                    className="sm:hidden p-2 rounded-full bg-white/10 text-white/80 hover:text-white cursor-pointer"
-                    aria-label="Close search"
+            {/* Main Search Card Container */}
+            <div className="bg-[#DCDCDC] rounded-b-2xl rounded-tr-2xl p-5 sm:p-6 shadow-2xl text-gray-900 border border-[#C8C8C8] relative z-0">
+              <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 items-end">
+                
+                {/* Destination Input Field */}
+                <div ref={locationPickerRef} className="md:col-span-4 space-y-0 relative">
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase tracking-wider mb-2 pl-0.5">
+                    Destination
+                  </label>
+                  <div 
+                    onClick={() => {
+                      setIsGuestPickerOpen(false);
+                      setIsLocationPickerOpen((prev) => !prev);
+                    }}
+                    className="flex items-center space-x-2.5 bg-[#C8C8C8] hover:bg-[#BCBCBC] px-3.5 h-[48px] rounded-xl cursor-pointer transition-all border border-gray-400/40"
                   >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-
-                {/* Capsule Fields Row */}
-                <div className="flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4 overflow-visible">
-                  
-                  {/* Location Field Card with Glass Effect & Suggestions Dropdown */}
-                  <div className="relative group flex-grow w-full md:w-auto z-40">
-                    <div 
-                      onClick={() => setIsLocationPickerOpen(true)}
-                      className="flex items-center space-x-3.5 bg-white/10 backdrop-blur-md p-3.5 rounded-xl border border-white/10 sm:border-none transition-all cursor-pointer"
-                    >
-                      {searchTab === "tours" ? (
-                        <MapPin className="h-5 w-5 text-white shrink-0" />
-                      ) : (
-                        <Hotel className="h-5 w-5 text-white shrink-0" />
-                      )}
-                      <div className="text-left w-full">
-                        <span className="block text-[11px] font-extrabold text-white/90 uppercase tracking-wider">Location</span>
-                        <input
-                          type="text"
-                          placeholder={searchTab === "tours" ? "Thailand, Cox's Bazar..." : "Where are you staying?"}
-                          value={destination}
-                          onChange={(e) => {
-                            setDestination(e.target.value);
-                            setIsLocationPickerOpen(true);
-                          }}
-                          onFocus={() => setIsLocationPickerOpen(true)}
-                          className="w-full bg-transparent text-xs sm:text-sm text-white font-extrabold outline-none placeholder-white/70 mt-0.5"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Location Suggestions Dropdown Modal */}
-                    {isLocationPickerOpen && (
-                      <div className="absolute left-0 right-0 top-full pt-1.5 z-50 min-w-[280px] sm:min-w-[320px]">
-                        <div className="bg-slate-900/98 backdrop-blur-2xl p-3 shadow-2xl rounded-2xl text-white border border-white/15 space-y-2 max-h-[220px] sm:max-h-[260px] overflow-y-auto">
-                          <div className="flex justify-between items-center px-2 pt-1 pb-2 border-b border-white/10">
-                            <span className="text-[10px] font-extrabold text-amber-400 uppercase tracking-wider">Available Destinations</span>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setIsLocationPickerOpen(false);
-                              }}
-                              className="text-[10px] text-white/60 hover:text-white uppercase font-bold cursor-pointer"
-                            >
-                              Close
-                            </button>
-                          </div>
-
-                          {filteredSuggestions.length > 0 ? (
-                            <div className="space-y-1 pt-1">
-                              {filteredSuggestions.map((loc, idx) => (
-                                <button
-                                  key={idx}
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setDestination(loc.name);
-                                    setIsLocationPickerOpen(false);
-                                  }}
-                                  className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-white/10 transition-colors text-left group cursor-pointer"
-                                >
-                                  <div className="flex items-center space-x-2.5">
-                                    <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-amber-400 group-hover:bg-[#0061AA] group-hover:text-white transition-colors shrink-0">
-                                      <MapPin className="h-4 w-4" />
-                                    </div>
-                                    <div>
-                                      <span className="block text-xs font-bold text-white group-hover:text-amber-300 transition-colors">{loc.name}</span>
-                                      <span className="block text-[10px] text-slate-400">{loc.type}</span>
-                                    </div>
-                                  </div>
-                                  <span className="text-[10px] text-slate-300 font-semibold bg-white/5 px-2 py-0.5 rounded-md border border-white/10">
-                                    {typeof loc.count === "number" ? `${loc.count} Listing(s)` : loc.count}
-                                  </span>
-                                </button>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="p-4 text-center text-xs text-slate-400 font-semibold">
-                              No destinations matching &quot;{destination}&quot;
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
+                    <MapPin className="h-4 w-4 text-gray-700 shrink-0" />
+                    <input
+                      type="text"
+                      placeholder="Your Destination..........."
+                      value={destination}
+                      onChange={(e) => {
+                        setDestination(e.target.value);
+                        setIsLocationPickerOpen(true);
+                      }}
+                      onFocus={() => setIsLocationPickerOpen(true)}
+                      className="w-full bg-transparent text-xs sm:text-sm text-gray-900 font-semibold outline-none placeholder-gray-600"
+                    />
                   </div>
 
-                  {/* Travel & Stay Dates Field Card with Glass Effect */}
-                  <div className="relative group flex-grow w-full md:w-auto">
+                  {/* Location Suggestions Dropdown */}
+                  {isLocationPickerOpen && (
                     <div 
-                      onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
-                      className="flex items-center space-x-3.5 bg-white/10 backdrop-blur-md p-3.5 rounded-xl cursor-pointer transition-all text-left h-full border border-white/10 sm:border-none"
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute left-0 right-0 top-full pt-2 z-50 min-w-[280px]"
                     >
-                      {searchTab === "tours" ? (
-                        <Clock className="h-5 w-5 text-white shrink-0" />
-                      ) : (
-                        <Calendar className="h-5 w-5 text-white shrink-0" />
-                      )}
-                      <div className="flex-grow">
-                        <span className="block text-[11px] font-extrabold text-white/90 uppercase tracking-wider">
-                          {searchTab === "hotels" ? "Stay Dates" : "Travel Dates"}
-                        </span>
-                        <span className="block text-xs sm:text-sm text-white font-extrabold mt-0.5 truncate">
-                          {startDate && endDate 
-                            ? `${startDate} to ${endDate}`
-                            : startDate 
-                            ? (searchTab === "hotels" ? `Check-In: ${startDate}` : `From ${startDate}`)
-                            : endDate 
-                            ? (searchTab === "hotels" ? `Check-Out: ${endDate}` : `To ${endDate}`)
-                            : (searchTab === "hotels" ? "Select stay duration" : "Select travel duration")}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Date Picker Dropdown Modal */}
-                    <div className={`absolute left-0 right-0 top-full pt-1.5 z-50 ${isDatePickerOpen ? "block" : "hidden group-hover:block hover:block"} min-w-[300px] sm:min-w-[320px]`}>
-                      <div className="bg-slate-900/98 backdrop-blur-2xl p-4 shadow-2xl rounded-2xl text-white border border-white/10">
-                        <div className="flex justify-between items-center mb-3">
-                          <p className="text-[11px] font-extrabold text-white/90 uppercase tracking-wider">
-                            {searchTab === "hotels" ? "Select Stay Duration" : "Select Travel Duration"}
-                          </p>
+                      <div className="bg-white rounded-2xl p-3 shadow-2xl border border-gray-200 text-gray-900 max-h-[280px] overflow-y-auto space-y-1">
+                        <div className="flex justify-between items-center px-2 py-1 border-b border-gray-100 mb-1">
+                          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">BD 64 Districts</span>
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setIsDatePickerOpen(false);
+                              setIsLocationPickerOpen(false);
                             }}
-                            className="text-[10px] font-bold text-amber-400 hover:underline uppercase"
+                            className="text-[10px] font-bold text-[#0061AA] hover:underline cursor-pointer"
+                          >
+                            Close
+                          </button>
+                        </div>
+                        {filteredSuggestions.length > 0 ? (
+                          filteredSuggestions.map((districtName, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDestination(districtName);
+                                setIsLocationPickerOpen(false);
+                              }}
+                              className="w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl hover:bg-gray-100 transition-colors text-left cursor-pointer"
+                            >
+                              <MapPin className="h-4 w-4 text-[#0061AA] shrink-0" />
+                              <span className="text-xs font-bold text-gray-900">{districtName}</span>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="p-3 text-center text-xs text-gray-500 font-medium">
+                            No district matching &quot;{destination}&quot;
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Date 1 Field: Check In / From */}
+                <div className="md:col-span-2 space-y-0 relative">
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase tracking-wider mb-2 pl-0.5">
+                    {searchTab === "hotels" ? "Check In" : "From"}
+                  </label>
+                  <div className="relative flex items-center space-x-2.5 bg-[#C8C8C8] hover:bg-[#BCBCBC] px-3.5 h-[48px] rounded-xl cursor-pointer transition-all border border-gray-400/40">
+                    <Calendar className="h-4 w-4 text-gray-700 shrink-0" />
+                    <span className="text-xs sm:text-sm text-gray-900 font-semibold uppercase truncate">
+                      {startDate ? startDate : "YY-MM-DD"}
+                    </span>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      onClick={(e: any) => e.target.showPicker?.()}
+                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                {/* Date 2 Field: Check Out / To */}
+                <div className="md:col-span-2 space-y-0 relative">
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase tracking-wider mb-2 pl-0.5">
+                    {searchTab === "hotels" ? "Check Out" : "To"}
+                  </label>
+                  <div className="relative flex items-center space-x-2.5 bg-[#C8C8C8] hover:bg-[#BCBCBC] px-3.5 h-[48px] rounded-xl cursor-pointer transition-all border border-gray-400/40">
+                    <Calendar className="h-4 w-4 text-gray-700 shrink-0" />
+                    <span className="text-xs sm:text-sm text-gray-900 font-semibold uppercase truncate">
+                      {endDate ? endDate : "YY-MM-DD"}
+                    </span>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      onClick={(e: any) => e.target.showPicker?.()}
+                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                {/* Who / Add Guests Selection Field */}
+                <div ref={guestPickerRef} className="md:col-span-3 space-y-0 relative">
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase tracking-wider mb-2 pl-0.5">
+                    Who
+                  </label>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsLocationPickerOpen(false);
+                      setIsGuestPickerOpen((prev) => !prev);
+                    }}
+                    className="w-full flex items-center space-x-2.5 bg-[#C8C8C8] hover:bg-[#BCBCBC] px-3.5 h-[48px] rounded-xl cursor-pointer transition-all border border-gray-400/40 text-left"
+                  >
+                    <Users className="h-4 w-4 text-gray-700 shrink-0" />
+                    <span className="text-xs sm:text-sm text-gray-900 font-semibold truncate">
+                      {getGuestSummary()}
+                    </span>
+                  </button>
+
+                  {/* Guest Option Selection Dropdown (Image 2 design) */}
+                  {isGuestPickerOpen && (
+                    <div 
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute right-0 top-full pt-2 z-50 min-w-[320px] sm:min-w-[360px]"
+                    >
+                      <div className="bg-white rounded-3xl p-6 shadow-2xl border border-gray-200 text-gray-900 space-y-1 animate-in fade-in duration-200">
+                        <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-2">
+                          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Guest Selection</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setIsGuestPickerOpen(false);
+                            }}
+                            className="text-xs font-bold text-[#0061AA] hover:underline cursor-pointer"
                           >
                             Done
                           </button>
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-white/10 p-3 rounded-xl border-none">
-                            <span className="block text-[10px] font-extrabold text-white/90 uppercase tracking-wider mb-1">
-                              {searchTab === "hotels" ? "Check-In" : "From"}
-                            </span>
-                            <input
-                              type="date"
-                              value={startDate}
-                              onChange={(e) => setStartDate(e.target.value)}
-                              onClick={(e: any) => e.target.showPicker?.()}
-                              style={{ colorScheme: "dark" }}
-                              className="w-full bg-transparent text-xs text-white font-extrabold outline-none cursor-pointer text-left"
-                            />
+
+                        {/* Adults */}
+                        <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">Adults</p>
+                            <p className="text-xs text-gray-500">Ages 13 or above</p>
                           </div>
-                          <div className="bg-white/10 p-3 rounded-xl border-none">
-                            <span className="block text-[10px] font-extrabold text-white/90 uppercase tracking-wider mb-1">
-                              {searchTab === "hotels" ? "Check-Out" : "To"}
-                            </span>
-                            <input
-                              type="date"
-                              value={endDate}
-                              onChange={(e) => setEndDate(e.target.value)}
-                              onClick={(e: any) => e.target.showPicker?.()}
-                              style={{ colorScheme: "dark" }}
-                              className="w-full bg-transparent text-xs text-white font-extrabold outline-none cursor-pointer text-left"
-                            />
+                          <div className="flex items-center space-x-3">
+                            <button
+                              type="button"
+                              disabled={adults <= 0}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setAdults((prev) => Math.max(0, prev - 1));
+                              }}
+                              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-gray-900 active:scale-95 disabled:opacity-30 disabled:hover:border-gray-300 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                              <Minus className="h-3.5 w-3.5" />
+                            </button>
+                            <span className="w-5 text-center text-sm font-semibold text-gray-900">{adults}</span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setAdults((prev) => prev + 1);
+                              }}
+                              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-gray-900 active:scale-95 cursor-pointer"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
                           </div>
                         </div>
+
+                        {/* Children */}
+                        <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">Children</p>
+                            <p className="text-xs text-gray-500">Ages 2 – 12</p>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <button
+                              type="button"
+                              disabled={childrenCount <= 0}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setChildrenCount((prev) => Math.max(0, prev - 1));
+                              }}
+                              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-gray-900 active:scale-95 disabled:opacity-30 disabled:hover:border-gray-300 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                              <Minus className="h-3.5 w-3.5" />
+                            </button>
+                            <span className="w-5 text-center text-sm font-semibold text-gray-900">{childrenCount}</span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setChildrenCount((prev) => prev + 1);
+                              }}
+                              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-gray-900 active:scale-95 cursor-pointer"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Infants */}
+                        <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">Infants</p>
+                            <p className="text-xs text-gray-500">Under 2</p>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <button
+                              type="button"
+                              disabled={infants <= 0}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setInfants((prev) => Math.max(0, prev - 1));
+                              }}
+                              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-gray-900 active:scale-95 disabled:opacity-30 disabled:hover:border-gray-300 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                              <Minus className="h-3.5 w-3.5" />
+                            </button>
+                            <span className="w-5 text-center text-sm font-semibold text-gray-900">{infants}</span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setInfants((prev) => prev + 1);
+                              }}
+                              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-gray-900 active:scale-95 cursor-pointer"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Pets */}
+                        <div className="flex items-center justify-between py-3">
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">Pets</p>
+                            <p className="text-xs text-gray-400 underline cursor-pointer hover:text-gray-600">Bringing a service animal?</p>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <button
+                              type="button"
+                              disabled={pets <= 0}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setPets((prev) => Math.max(0, prev - 1));
+                              }}
+                              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-gray-900 active:scale-95 disabled:opacity-30 disabled:hover:border-gray-300 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                              <Minus className="h-3.5 w-3.5" />
+                            </button>
+                            <span className="w-5 text-center text-sm font-semibold text-gray-900">{pets}</span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setPets((prev) => prev + 1);
+                              }}
+                              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-gray-900 active:scale-95 cursor-pointer"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
                       </div>
                     </div>
-                  </div>
+                  )}
+                </div>
 
-                  {/* Platform Primary Search Button */}
+                {/* Search Button Icon Container */}
+                <div className="md:col-span-1 flex items-center justify-center">
                   <button
                     type="submit"
-                    className="w-full md:w-auto bg-btn-primary text-btn-text-primary hover:bg-opacity-90 font-black text-xs py-3.5 px-6 rounded-xl flex items-center justify-center cursor-pointer shadow-xl transition-all shrink-0 uppercase tracking-wider h-full border-none"
+                    className="w-full bg-[#C8C8C8] hover:bg-[#BCBCBC] text-gray-900 h-[48px] rounded-xl border border-gray-400/40 flex items-center justify-center cursor-pointer transition-all shadow-sm group"
                     title="Search"
                   >
-                    <Search className="h-6 w-6 text-btn-text-primary mr-2 md:mr-0" />
-                    <span className="md:hidden text-xs font-black">SEARCH ORBITX</span>
+                    <Search className="h-5 w-5 text-gray-800 group-hover:scale-110 transition-transform" />
                   </button>
-
                 </div>
+
               </form>
             </div>
 
           </div>
+
         </div>
       </section>
 
       {/* Main Listings Grid */}
-      <section className="w-full mx-auto px-0 sm:px-8 lg:px-16">
+      <section id="tour-packages-section" className="w-full mx-auto px-0 sm:px-8 lg:px-16">
         <div className="space-y-1.5 mb-8 border-b border-neutral-200 pb-4 px-4 sm:px-0">
           <h3 className="text-3xl sm:text-5xl font-serif font-medium text-black tracking-normal leading-tight">
             Tour Packages
@@ -579,10 +694,17 @@ export default function Home() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent z-10 transition-opacity duration-300 group-hover:from-black/90"></div>
 
                 <div className="absolute bottom-0 left-0 right-0 p-5 z-20 space-y-3">
-                  <h4 className="text-base font-bold text-white leading-tight line-clamp-2 flex items-start gap-1">
-                    <MapPin className="h-4.5 w-4.5 text-white shrink-0 mt-0.5" />
-                    <span>{pkg.title}</span>
-                  </h4>
+                  <div className="space-y-1">
+                    {pkg.destination && (
+                      <p className="text-xs text-gray-200 font-bold flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5 text-white shrink-0" />
+                        <span>{pkg.destination}</span>
+                      </p>
+                    )}
+                    <h4 className="text-base font-bold text-white leading-tight line-clamp-2">
+                      {pkg.title}
+                    </h4>
+                  </div>
 
                   <div className="max-h-[220px] opacity-100 sm:max-h-0 sm:opacity-0 overflow-hidden sm:group-hover:max-h-[220px] sm:group-hover:opacity-100 transition-all duration-500 ease-in-out space-y-3">
                     <div className="flex items-center justify-between text-[11px] text-gray-300 font-semibold">
@@ -626,7 +748,7 @@ export default function Home() {
       </section>
 
       {/* Featured Hotels Section */}
-      <section className="w-full mx-auto px-0 sm:px-8 lg:px-16 mt-16">
+      <section id="featured-hotels-section" className="w-full mx-auto px-0 sm:px-8 lg:px-16 mt-16">
         <div className="space-y-1.5 mb-8 border-b border-neutral-200 pb-4 px-4 sm:px-0">
           <div className="flex items-center justify-between">
             <h3 className="text-3xl sm:text-5xl font-serif font-medium text-black tracking-normal leading-tight">

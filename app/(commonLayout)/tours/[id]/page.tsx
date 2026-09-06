@@ -20,7 +20,8 @@ import {
   Clock,
   Share,
   Heart,
-  Globe
+  Globe,
+  MapPin
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
@@ -109,7 +110,15 @@ export default function TourDetailsPage() {
       
       {/* Top Title & Actions Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border-custom pb-4 mb-2 mt-0">
-        <h1 className="text-2xl md:text-3xl font-extrabold text-text-primary tracking-wide leading-tight">{pkg.title}</h1>
+        <div className="space-y-1">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-text-primary tracking-wide leading-tight">{pkg.title}</h1>
+          {pkg.destination && (
+            <p className="flex items-center text-xs font-semibold text-text-secondary">
+              <MapPin className="h-4 w-4 text-theme-primary mr-1.5 shrink-0" />
+              <span>{pkg.destination}</span>
+            </p>
+          )}
+        </div>
         
         {/* Right Action buttons */}
         <div className="flex items-center space-x-2 text-xs font-semibold text-text-secondary shrink-0">
