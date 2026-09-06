@@ -1,23 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useGetPackagesQuery } from "@/redux/api/tour/tourApi";
 import { Compass, MapPin, Calendar, Search, ShieldCheck, Bus, Hotel, UtensilsCrossed, AlertTriangle, Clock } from "lucide-react";
 import Link from "next/link";
 
 export default function FindToursPage() {
+  const searchParams = useSearchParams();
+  const initialDest = searchParams.get("destination") || "";
+  const initialStartDate = searchParams.get("startDate") || "";
+  const initialEndDate = searchParams.get("endDate") || "";
+  const initialGuests = searchParams.get("guests") || "";
+
   // Search state variables
-  const [destination, setDestination] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [destination, setDestination] = useState(initialDest);
+  const [startDate, setStartDate] = useState(initialStartDate);
+  const [endDate, setEndDate] = useState(initialEndDate);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
 
   // Filters to send to API
   const [filters, setFilters] = useState<{
     destination?: string;
     startDate?: string;
+    endDate?: string;
+    guests?: string;
     verifiedOnly?: boolean;
-  }>({});
+  }>({
+    destination: initialDest || undefined,
+    startDate: initialStartDate || undefined,
+    endDate: initialEndDate || undefined,
+    guests: initialGuests || undefined,
+  });
+
+  useEffect(() => {
+    const dest = searchParams.get("destination") || "";
+    const sDate = searchParams.get("startDate") || "";
+    const eDate = searchParams.get("endDate") || "";
+    const gst = searchParams.get("guests") || "";
+    setDestination(dest);
+    setStartDate(sDate);
+    setEndDate(eDate);
+    setFilters({
+      destination: dest || undefined,
+      startDate: sDate || undefined,
+      endDate: eDate || undefined,
+      guests: gst || undefined,
+    });
+  }, [searchParams]);
 
   const { data: packagesResponse, isLoading, error } = useGetPackagesQuery(filters);
   const packagesList = packagesResponse?.data || [];
@@ -27,6 +57,7 @@ export default function FindToursPage() {
     const activeFilters: typeof filters = {};
     if (destination) activeFilters.destination = destination;
     if (startDate) activeFilters.startDate = startDate;
+    if (endDate) activeFilters.endDate = endDate;
     if (verifiedOnly) activeFilters.verifiedOnly = true;
     setFilters(activeFilters);
   };
@@ -203,11 +234,18 @@ export default function FindToursPage() {
                 )}
 
                 <div className="absolute bottom-0 left-0 right-0 p-4 z-20 space-y-3">
-                  {/* Location Icon + Title - Always visible initially */}
-                  <h4 className="text-base font-semibold text-white leading-tight line-clamp-2 flex items-start gap-1">
-                    <MapPin className="h-4.5 w-4.5 text-white shrink-0 mt-0.5" />
-                    <span>{pkg.title}</span>
-                  </h4>
+                  {/* Location & Title */}
+                  <div className="space-y-1">
+                    {pkg.destination && (
+                      <p className="text-xs text-gray-200 font-bold flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5 text-white shrink-0" />
+                        <span>{pkg.destination}</span>
+                      </p>
+                    )}
+                    <h4 className="text-base font-semibold text-white leading-tight line-clamp-2">
+                      {pkg.title}
+                    </h4>
+                  </div>
 
                   {/* Rest of information - Revealed on hover */}
                   <div className="max-h-0 opacity-0 overflow-hidden group-hover:max-h-[220px] group-hover:opacity-100 transition-all duration-500 ease-in-out space-y-3">
