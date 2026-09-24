@@ -289,13 +289,23 @@ export default function Home() {
         <div className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-8 pt-8 flex flex-col items-center justify-center text-center">
           
           {/* Centered Main Headline */}
-          <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-wide uppercase leading-tight max-w-4xl drop-shadow-lg">
-            WE OFFER AWARD WINNING TRAVELING SERVICES WITH REASONABLE PRICES
+          <h1 
+            style={{ fontFamily: "var(--font-recoleta), serif" }}
+            className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-[1.18] max-w-4xl drop-shadow-2xl"
+          >
+            Discover{" "}
+            <span className="bg-gradient-to-r from-sky-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent font-extrabold">
+              Extraordinary Tours
+            </span>{" "}
+            & Verified{" "}
+            <span className="bg-gradient-to-r from-sky-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent font-extrabold">
+              Hotel Stays
+            </span>
           </h1>
 
           {/* Subtitle Paragraph */}
-          <p className="text-xs sm:text-sm md:text-base text-gray-200 max-w-2xl mx-auto font-normal mt-4 leading-relaxed drop-shadow-md">
-            Book verified seat locks and luxury hotel stays curated by global tour organizers on OrbitX Travel.
+          <p className="text-xs sm:text-base md:text-lg text-gray-200 max-w-2xl mx-auto font-normal mt-5 leading-relaxed drop-shadow-md">
+            Book verified seat locks, luxury resort stays, and curated holiday packages with total escrow protection across Bangladesh & globally.
           </p>
 
           {/* Search Card Container with Overlapping Tabs */}
